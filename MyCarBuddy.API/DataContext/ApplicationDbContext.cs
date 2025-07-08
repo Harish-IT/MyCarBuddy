@@ -12,5 +12,6 @@ namespace MyCarBuddy.API.DataContext
         public DbSet<Bookings> Bookings { get; set; }
         public DbSet<CustomerDetails> Customers { get; set; }
         public DbSet<StateModel>States { get; set; }
+        public DbSet<CityModel>Cities { get; set; }
     }
 }
