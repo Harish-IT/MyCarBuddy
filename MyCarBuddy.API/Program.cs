@@ -64,6 +64,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -76,6 +77,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middleware
+app.UseMiddleware<MyCarBuddy.API.Middleware.ErrorLoggingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

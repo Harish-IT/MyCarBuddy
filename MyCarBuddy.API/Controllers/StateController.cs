@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MyCarBuddy.API.Models;
+using MyCarBuddy.API.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,18 +13,20 @@ using System.IO;
 
 namespace MyCarBuddy.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class StateController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<StateController> _logger;
 
-        public StateController(IConfiguration configuration)
+        public StateController(IConfiguration configuration, ILogger<StateController> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
 
-      
 
         [HttpPost]
         public IActionResult InsertState(StateModel state)
@@ -60,6 +65,7 @@ namespace MyCarBuddy.API.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
             }
         }
@@ -93,6 +99,7 @@ namespace MyCarBuddy.API.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while updating the record.", error = ex.Message });
             }
         }
@@ -124,6 +131,7 @@ namespace MyCarBuddy.API.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while deleting the record.", error = ex.Message });
             }
         }
@@ -160,6 +168,7 @@ namespace MyCarBuddy.API.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while retrieving the states.", error = ex.Message });
             }
         }
@@ -200,6 +209,7 @@ namespace MyCarBuddy.API.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while retrieving the state.", error = ex.Message });
             }
         }
