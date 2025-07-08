@@ -41,7 +41,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@StateName", state.StateName);
                         cmd.Parameters.AddWithValue("@IsActive", state.IsActive);
                         conn.Open();
-                       // cmd.ExecuteNonQuery();
+                        // cmd.ExecuteNonQuery();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
@@ -49,7 +49,12 @@ namespace MyCarBuddy.API.Controllers
                                 var stateId = Convert.ToInt32(reader["StateID"]);
                                 var status = reader["Status"].ToString();
 
-                                if (status == "DUPLICATE")
+                                if (status == "EMPTY_NAME")
+                                {
+                                    return BadRequest(new { message = "State name cannot be empty or null." });
+                                }
+
+                                else if (status == "DUPLICATE")
                                 {
                                     return BadRequest(new { message = "A state with the same name already exists." });
                                 }
