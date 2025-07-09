@@ -5,13 +5,26 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using MyCarBuddy.API.Services; // Ensure this exists
+using MyCarBuddy.API.Services;
+using System;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Listen on external IP & port 80 (HTTP)
-builder.WebHost.UseUrls("http://0.0.0.0:80");
+// Detect environment update
+var isDevelopment = builder.Environment.IsDevelopment();
+
+// Conditional URL binding
+if (isDevelopment)
+{
+    builder.WebHost.UseUrls("https://localhost:5001");
+    Console.WriteLine("Binding to https://localhost:5000 for local development.");
+}
+else
+{
+    builder.WebHost.UseUrls("https://0.0.0.0:443");
+    Console.WriteLine("Binding to https://0.0.0.0:443 for server/production.");
+}
 
 // Add services
 builder.Services.AddControllers();
@@ -23,13 +36,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173", "http://192.168.0.20:5173")
+            policy.WithOrigins("http://localhost:5173")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
 });
 
-// Swagger setup
+// Swagger setup (enabled only in development)
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "MyCarBuddy API", Version = "v1" });
@@ -77,30 +90,23 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI(options =>
-//    {
-//        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
-//    });
-//}
-
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
+    });
+}
 
 // Middleware
 app.UseMiddleware<MyCarBuddy.API.Middleware.ErrorLoggingMiddleware>();
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 // Use the CORS policy here
 app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();

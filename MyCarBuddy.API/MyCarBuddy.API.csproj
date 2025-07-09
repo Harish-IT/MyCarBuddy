@@ -3,7 +3,7 @@
     <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Program.cs" />
+    <!--<Compile Remove="Program.cs" />-->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Braintree" Version="5.34.0" />
