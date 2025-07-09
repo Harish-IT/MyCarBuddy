@@ -13,7 +13,7 @@ using System.IO;
 
 namespace MyCarBuddy.API.Controllers
 {
-    [Authorize]
+   // [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class StateController : ControllerBase

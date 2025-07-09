@@ -10,13 +10,24 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Server IP Listen on external IP & port 443 (HTTPS)
-//builder.WebHost.UseKestrel()
-//    .UseUrls("https://93.127.139.216:443");
+// Listen on external IP & port 80 (HTTP)
+builder.WebHost.UseUrls("http://0.0.0.0:80");
 
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Add CORS policy for React app
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 // Swagger setup
 builder.Services.AddSwaggerGen(options =>
@@ -64,7 +75,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -79,7 +89,12 @@ if (app.Environment.IsDevelopment())
 // Middleware
 app.UseMiddleware<MyCarBuddy.API.Middleware.ErrorLoggingMiddleware>();
 app.UseHttpsRedirection();
+
+// Use the CORS policy here
+app.UseCors("AllowReactApp");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
