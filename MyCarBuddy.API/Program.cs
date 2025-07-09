@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins("http://localhost:5173", "http://192.168.0.20:5173")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
@@ -77,18 +77,24 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI(options =>
+//    {
+//        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
+//    });
+//}
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
+});
 
 // Middleware
 app.UseMiddleware<MyCarBuddy.API.Middleware.ErrorLoggingMiddleware>();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 // Use the CORS policy here
 app.UseCors("AllowReactApp");
