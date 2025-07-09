@@ -151,7 +151,7 @@ namespace MyCarBuddy.API.Controllers
         {
             try
             {
-                List<CityModel> cities = new List<CityModel>();
+                DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_ListCities", conn))
@@ -160,31 +160,28 @@ namespace MyCarBuddy.API.Controllers
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            while (reader.Read())
-                            {
-                                cities.Add(new CityModel
-                                {
-                                    CityID = Convert.ToInt32(reader["CityID"]),
-                                    StateID = Convert.ToInt32(reader["StateID"]),
-                                    CityName = reader["CityName"].ToString(),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"])
-
-                                });
-                            }
-                           
+                            dt.Load(reader); // Loads all columns and rows into the DataTable
                         }
-                        cmd.ExecuteNonQuery();
                         conn.Close();
                     }
                 }
-                return Ok(cities);
-
-
+                // Convert DataTable to JSON-friendly structure
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+                return Ok(jsonResult);
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the states.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the cities.", error = ex.Message });
             }
         }
         [HttpGet("cityid")]
@@ -192,44 +189,41 @@ namespace MyCarBuddy.API.Controllers
         {
             try
             {
-                CityModel city = null;
+                DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_GetCitiesByID",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetCitiesByID", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@CityID", cityid);
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            if (reader.Read())
-                            {
-                                city = new CityModel
-                                {
-                                    CityID = Convert.ToInt32(reader["CityID"]),
-                                    StateID = Convert.ToInt32(reader["StateID"]),
-                                    CityName = reader["CityName"].ToString(),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"])
-
-                                };
-                            }
+                            dt.Load(reader); // Load all columns and rows
                         }
                         conn.Close();
                     }
                 }
-                if (city == null)
+
+                if (dt.Rows.Count == 0)
                 {
                     return NotFound(new { message = "city not found" });
                 }
-                return Ok(city);
 
+                // Convert DataTable to JSON-friendly structure (single row)
+                var dict = new Dictionary<string, object>();
+                foreach (DataColumn col in dt.Columns)
+                {
+                    dict[col.ColumnName] = dt.Rows[0][col];
+                }
+
+                return Ok(dict);
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the state.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the city.", error = ex.Message });
             }
-
         }
     }
 }

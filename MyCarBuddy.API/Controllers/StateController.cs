@@ -146,7 +146,7 @@ namespace MyCarBuddy.API.Controllers
         {
             try
             {
-                List<StateModel> states = new List<StateModel>();
+                DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_ListStates", conn))
@@ -155,21 +155,24 @@ namespace MyCarBuddy.API.Controllers
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            while (reader.Read())
-                            {
-                                states.Add(new StateModel
-                                {
-                                    StateId = Convert.ToInt32(reader["StateId"]),
-                                    StateName = reader["StateName"].ToString(),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"])
-                                });
-                            }
+                            dt.Load(reader); // Load all columns and rows
                         }
-                        cmd.ExecuteNonQuery();
                         conn.Close();
                     }
                 }
-                return Ok(states);
+
+                // Convert DataTable to JSON-friendly structure
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+                return Ok(jsonResult);
             }
             catch (Exception ex)
             {
@@ -177,13 +180,12 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the states.", error = ex.Message });
             }
         }
-
         [HttpGet("{stateid}")]
         public IActionResult GetStatesById(int stateid)
         {
             try
             {
-                StateModel state = null;
+                DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_GetStatesByID", conn))
@@ -193,24 +195,25 @@ namespace MyCarBuddy.API.Controllers
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            if (reader.Read())
-                            {
-                                state = new StateModel
-                                {
-                                    StateId = Convert.ToInt32(reader["StateId"]),
-                                    StateName = reader["StateName"].ToString(),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"])
-                                };
-                            }
+                            dt.Load(reader); // Load all columns and rows
                         }
                         conn.Close();
                     }
                 }
-                if (state == null)
+
+                if (dt.Rows.Count == 0)
                 {
                     return NotFound(new { message = "state not found" });
                 }
-                return Ok(state);
+
+                // Convert DataTable to JSON-friendly structure (single row)
+                var dict = new Dictionary<string, object>();
+                foreach (DataColumn col in dt.Columns)
+                {
+                    dict[col.ColumnName] = dt.Rows[0][col];
+                }
+
+                return Ok(dict);
             }
             catch (Exception ex)
             {

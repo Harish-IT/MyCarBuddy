@@ -182,99 +182,84 @@ namespace MyCarBuddy.API.Controllers
         {
             try
             {
-                List<DistributorsModel>distributors=new List<DistributorsModel>();
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_ListDistributors",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_ListDistributors", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            while(reader.Read())
-                            {
-                                distributors.Add(new DistributorsModel
-                                {
-                                    DistributorID = Convert.ToInt32(reader["DistributorID"]),
-                                    FullName = reader["FullName"].ToString(),
-                                    PhoneNumber = reader["PhoneNumber"].ToString(),
-                                    Email = reader["Email"].ToString(),
-                                    PasswordHash = reader["PasswordHash"].ToString(),
-                                    StateID = Convert.ToInt32(reader["StateID"]),
-                                    CityID = Convert.ToInt32(reader["CityID"]),
-                                    Address = reader["Address"].ToString(),
-                                    GSTNumber = reader["GSTNumber"].ToString(),
-                                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"])
-
-
-                                });
-                            }
+                            dt.Load(reader); // Load data into DataTable
                         }
-                        cmd.ExecuteNonQuery();
                         conn.Close();
-
                     }
                 }
-                return Ok(distributors);
-
+                // Convert DataTable to JSON-friendly structure
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+                return Ok(jsonResult);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the states.", error = ex.Message });
-
-
+                return StatusCode(500, new { message = "An error occurred while retrieving the distributors.", error = ex.Message });
             }
         }
-        [HttpGet("distrbutorid")]
+        [HttpGet("distributorid")]
         public IActionResult GetDistributorsById(int distributorid)
         {
-            try {
-                DistributorsModel distributor = null;
+            try
+            {
+                DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_GetDistributorsByID", conn))
                     {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@DistributorID", distributorid);
+                        conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            while (reader.Read())
-                            {
-                                distributor = new DistributorsModel
-                                {
-                                    DistributorID = Convert.ToInt32(reader["DistributorID"]),
-                                    FullName = reader["FullName"].ToString(),
-                                    PhoneNumber = reader["PhoneNumber"].ToString(),
-                                    Email = reader["Email"].ToString(),
-                                    PasswordHash = reader["PasswordHash"].ToString(),
-                                    StateID = Convert.ToInt32(reader["StateID"]),
-                                    CityID = Convert.ToInt32(reader["CityID"]),
-                                    Address = reader["Address"].ToString(),
-                                    GSTNumber = reader["GSTNumber"].ToString(),
-                                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"])
-
-
-                                };
-                            }
+                            dt.Load(reader); // Load all columns and rows
                         }
                         conn.Close();
-
                     }
+                }
 
-                }
-                if (distributor == null)
+                if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "city not found" });
+                    return NotFound(new { message = "Distributor not found" });
                 }
-                return Ok(distributor);
+
+                // Convert DataTable to JSON-friendly structure
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+
+                // If you expect only one row, you can return jsonResult[0]
+                return Ok(jsonResult.Count == 1 ? jsonResult[0] : jsonResult);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the state.", error = ex.Message });
-
-
+                return StatusCode(500, new { message = "An error occurred while retrieving the distributor.", error = ex.Message });
             }
         }
 
