@@ -114,8 +114,8 @@ namespace MyCarBuddy.API.Controllers
 
 
         }
-        [HttpDelete]
-        public IActionResult DeleteCity(CityModel city)
+        [HttpDelete("{cityId}")]
+        public IActionResult DeleteCity(int cityId)
         {
             try
             {
@@ -124,21 +124,27 @@ namespace MyCarBuddy.API.Controllers
                     using (SqlCommand cmd = new SqlCommand("sp_DeleteCities", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CityID", city.CityID);
+                        cmd.Parameters.AddWithValue("@CityID", cityId);
                         conn.Open();
-                        int row = cmd.ExecuteNonQuery();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int resultCode = Convert.ToInt32(reader["ResultCode"]);
+                                string message = reader["Message"].ToString();
+
+                                if (resultCode == 1)
+                                    return Ok(new { message });
+                                else if (resultCode == -1)
+                                    return BadRequest(new { message }); 
+                                else
+                                    return NotFound(new { message });
+                            }
+                        }
                         conn.Close();
-                        if (row > 0)
-                        {
-                            return Ok(new { message = "Record is Deleted" });
-                        }
-                        else
-                        {
-                            return NotFound(new { message = "Record is not Deleted.." });
-                        }
                     }
                 }
-
+                return StatusCode(500, new { message = "Unknown error occurred." });
             }
             catch (Exception ex)
             {
@@ -146,6 +152,9 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while deleting the record.", error = ex.Message });
             }
         }
+
+
+
         [HttpGet]
         public IActionResult GetAllCities()
         {

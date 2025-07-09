@@ -109,8 +109,8 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-        [HttpDelete]
-        public IActionResult DeleteState(StateModel state)
+        [HttpDelete("{stateid}")]
+        public IActionResult DeleteState(int stateid)
         {
             try
             {
@@ -119,20 +119,27 @@ namespace MyCarBuddy.API.Controllers
                     using (SqlCommand cmd = new SqlCommand("sp_DeleteStates", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@StateID", state.StateId);
+                        cmd.Parameters.AddWithValue("@StateID", stateid);
                         conn.Open();
-                        int row = cmd.ExecuteNonQuery();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int resultCode = Convert.ToInt32(reader["ResultCode"]);
+                                string message = reader["Message"].ToString();
+
+                                if (resultCode == 1)
+                                    return Ok(new { message });
+                                else if (resultCode == -1)
+                                    return BadRequest(new { message }); // Already inactive
+                                else
+                                    return NotFound(new { message }); // Not found
+                            }
+                        }
                         conn.Close();
-                        if (row > 0)
-                        {
-                            return Ok(new { message = "Record is Deleted" });
-                        }
-                        else
-                        {
-                            return NotFound(new { message = "Record is not Deleted.." });
-                        }
                     }
                 }
+                return StatusCode(500, new { message = "Unknown error occurred." });
             }
             catch (Exception ex)
             {
