@@ -187,5 +187,49 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the states.", error = ex.Message });
             }
         }
+        [HttpGet("cityid")]
+        public IActionResult GetCityById(int cityid)
+        {
+            try
+            {
+                CityModel city = null;
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetCitiesByID",conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CityID", cityid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                city = new CityModel
+                                {
+                                    CityID = Convert.ToInt32(reader["CityID"]),
+                                    StateID = Convert.ToInt32(reader["StateID"]),
+                                    CityName = reader["CityName"].ToString(),
+                                    IsActive = Convert.ToBoolean(reader["IsActive"])
+
+                                };
+                            }
+                        }
+                        conn.Close();
+                    }
+                }
+                if (city == null)
+                {
+                    return NotFound(new { message = "city not found" });
+                }
+                return Ok(city);
+
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the state.", error = ex.Message });
+            }
+
+        }
     }
 }
