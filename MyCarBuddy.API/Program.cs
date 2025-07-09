@@ -11,7 +11,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Detect environment
+// Detect environment update
 var isDevelopment = builder.Environment.IsDevelopment();
 
 // Conditional URL binding
