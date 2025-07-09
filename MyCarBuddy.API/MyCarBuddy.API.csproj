@@ -3,9 +3,6 @@
     <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Program.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Braintree" Version="5.34.0" />
     <PackageReference Include="EntityFramework" Version="6.5.1" />
     <PackageReference Include="GSF.Core" Version="2.4.28" />

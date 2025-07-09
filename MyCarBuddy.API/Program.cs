@@ -5,31 +5,64 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using MyCarBuddy.API.Services; // Ensure this exists
+using MyCarBuddy.API.Services;
+using System;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Listen on external IP & port 80 (HTTP)
-builder.WebHost.UseUrls("http://0.0.0.0:80");
+// Detect environment
+var isDevelopment = builder.Environment.IsDevelopment();
+
+// Conditional URL binding
+if (isDevelopment)
+{
+    builder.WebHost.UseUrls("https://localhost:5001");
+    Console.WriteLine("Binding to https://localhost:5000 for local development.");
+}
+else
+{
+    builder.WebHost.UseUrls("https://0.0.0.0:443");
+    Console.WriteLine("Binding to https://0.0.0.0:443 for server/production.");
+}
 
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Add CORS policy for React app
-builder.Services.AddCors(options =>
+// CORS policies
+if (isDevelopment)
 {
-    options.AddPolicy("AllowReactApp",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        });
-});
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll",
+            policy =>
+            {
+                policy.WithOrigins("http://localhost:5173")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+    });
+}
+else
+{
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll",
+            policy =>
+            {
+                policy.WithOrigins(
+                "https://mycarbuddy.glansadesigns.com",
+                "https://api.mycarsbuddy.com",
+                "http://localhost:5173" // <-- Add this line
+            )
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+    });
+}
 
-// Swagger setup
+// Swagger setup (enabled only in development)
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "MyCarBuddy API", Version = "v1" });
@@ -77,24 +110,31 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Swagger only in development
+if (isDevelopment)
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
     });
+    Console.WriteLine("Swagger enabled at /swagger");
+}
+else
+{
+    // Uncomment below if you want Swagger in production (not recommended)
+    // app.UseSwagger();
+    // app.UseSwaggerUI(options =>
+    // {
+    //     options.SwaggerEndpoint("/swagger/v1/swagger.json", "MyCarBuddy API V1");
+    // });
 }
 
 // Middleware
 app.UseMiddleware<MyCarBuddy.API.Middleware.ErrorLoggingMiddleware>();
 app.UseHttpsRedirection();
-
-// Use the CORS policy here
-app.UseCors("AllowReactApp");
-
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 app.Run();
