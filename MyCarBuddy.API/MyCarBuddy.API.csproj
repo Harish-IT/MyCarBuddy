@@ -5,6 +5,7 @@
   <ItemGroup><!--<Compile Remove="Program.cs" />-->
   
     <Folder Include="Images\" />
+    <Folder Include="Documents\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Braintree" Version="5.34.0" />

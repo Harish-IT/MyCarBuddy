@@ -32,16 +32,98 @@ namespace MyCarBuddy.API.Controllers
 
 
 
+        //[HttpPost]
+        //[Route("InsertTechnicians")]
+        //public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
+        //{
+        //    try
+        //    {
+        //        string imagePath = null;
+        //        if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
+        //        {
+        //            // Use only the original file name
+        //            var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
+        //            var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+        //            if (!Directory.Exists(imagesFolder))
+        //                Directory.CreateDirectory(imagesFolder);
+
+        //            var filePath = Path.Combine(imagesFolder, fileName);
+        //            using (var stream = new FileStream(filePath, FileMode.Create))
+        //            {
+        //                await technicians.ProfileImageFile.CopyToAsync(stream);
+        //            }
+        //            imagePath = Path.Combine("Images", fileName).Replace("\\", "/");
+        //        }
+        //        // 2. Set the image path in the model (for DB)
+        //        technicians.ProfileImage = imagePath;
+
+        //        // 3. Insert into database
+        //        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+        //        {
+        //            using (SqlCommand cmd = new SqlCommand("sp_InsertTechniciansDetails", conn))
+        //            {
+        //                cmd.CommandType = CommandType.StoredProcedure;
+        //                cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
+        //                cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
+        //                cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
+        //                cmd.Parameters.AddWithValue("@Email", technicians.Email);
+        //                cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
+        //                cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
+        //                cmd.Parameters.AddWithValue("@AddressLine2", (object)technicians.AddressLine2 ?? DBNull.Value);
+        //                cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
+        //                cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
+        //                cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
+        //                cmd.Parameters.AddWithValue("@ProfileImage", (object)technicians.ProfileImage ?? DBNull.Value); // Save path, not file
+        //                cmd.Parameters.AddWithValue("@CredatedBy", technicians.CredatedBy);
+
+        //                conn.Open();
+        //                int row = cmd.ExecuteNonQuery();
+        //                if (row > 0)
+        //                {
+        //                    return Ok(new { status = true, message = "Technician is inserted" });
+        //                }
+        //                else
+        //                {
+        //                    return NotFound(new { status = false, message = "Technician is not inserted" });
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log error as per your existing logic
+        //        ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+        //        return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
+        //    }
+        //}
         [HttpPost]
         [Route("InsertTechnicians")]
         public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
         {
+            SqlConnection conn = null;
+            SqlTransaction transaction = null;
+
             try
             {
+                // Step 1: Validate document file and metadata count BEFORE inserting anything
+                int fileCount = technicians.DocumentFiles?.Count ?? 0;
+                int metaCount = technicians.Documents?.Count ?? 0;
+
+                if (fileCount != metaCount)
+                {
+                    return BadRequest(new
+                    {
+                        status = false,
+                        message = "The number of document files must match the number of document metadata entries.",
+                        fileCount,
+                        metaCount
+                    });
+                }
+
+                // Step 2: Save profile image (only if validation passes)
                 string imagePath = null;
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
-                    // Use only the original file name
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
                     var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
                     if (!Directory.Exists(imagesFolder))
@@ -54,48 +136,91 @@ namespace MyCarBuddy.API.Controllers
                     }
                     imagePath = Path.Combine("Images", fileName).Replace("\\", "/");
                 }
-                // 2. Set the image path in the model (for DB)
+
                 technicians.ProfileImage = imagePath;
 
-                // 3. Insert into database
-                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                {
-                    using (SqlCommand cmd = new SqlCommand("sp_InsertTechniciansDetails", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
-                        cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
-                        cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
-                        cmd.Parameters.AddWithValue("@Email", technicians.Email);
-                        cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
-                        cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
-                        cmd.Parameters.AddWithValue("@AddressLine2", (object)technicians.AddressLine2 ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
-                        cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
-                        cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
-                        cmd.Parameters.AddWithValue("@ProfileImage", (object)technicians.ProfileImage ?? DBNull.Value); // Save path, not file
-                        cmd.Parameters.AddWithValue("@CredatedBy", technicians.CredatedBy);
+                // Step 3: Begin SQL transaction
+                conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+                await conn.OpenAsync();
+                transaction = conn.BeginTransaction();
 
-                        conn.Open();
-                        int row = cmd.ExecuteNonQuery();
-                        if (row > 0)
-                        {
-                            return Ok(new { status = true, message = "Technician is inserted" });
-                        }
-                        else
-                        {
-                            return NotFound(new { status = false, message = "Technician is not inserted" });
-                        }
+                int techId;
+
+                // Step 4: Insert technician and get TechID
+                using (var cmd = new SqlCommand("sp_InsertTechniciansDetails", conn, transaction))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
+                    cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
+                    cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
+                    cmd.Parameters.AddWithValue("@Email", technicians.Email);
+                    cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
+                    cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
+                    cmd.Parameters.AddWithValue("@AddressLine2", (object)technicians.AddressLine2 ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
+                    cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
+                    cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
+                    cmd.Parameters.AddWithValue("@ProfileImage", (object)technicians.ProfileImage ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CredatedBy", technicians.CredatedBy);
+
+                    var result = await cmd.ExecuteScalarAsync();
+                    techId = Convert.ToInt32(result);
+                }
+
+                // Step 5: Insert documents
+                for (int i = 0; i < fileCount; i++)
+                {
+                    var file = technicians.DocumentFiles[i];
+                    var docMeta = technicians.Documents[i];
+
+                    // Save document file
+                    var docFileName = Path.GetFileName(file.FileName);
+                    var documentsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Documents");
+                    if (!Directory.Exists(documentsFolder))
+                        Directory.CreateDirectory(documentsFolder);
+
+                    var docFilePath = Path.Combine(documentsFolder, docFileName);
+                    using (var stream = new FileStream(docFilePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                    var documentUrl = Path.Combine("Documents", docFileName).Replace("\\", "/");
+
+                    // Insert document record
+                    using (var docCmd = new SqlCommand("sp_InsertTechnicianDocument", conn, transaction))
+                    {
+                        docCmd.CommandType = CommandType.StoredProcedure;
+                        docCmd.Parameters.AddWithValue("@TechID", techId);
+                        docCmd.Parameters.AddWithValue("@DocTypeID", docMeta.DocTypeID);
+                        docCmd.Parameters.AddWithValue("@DocumentURL", documentUrl);
+                        docCmd.Parameters.AddWithValue("@UploadedAt", docMeta.UploadedAt ?? DateTime.Now);
+                        docCmd.Parameters.AddWithValue("@Verified", docMeta.Verified);
+                        docCmd.Parameters.AddWithValue("@VerifiedBy", (object)docMeta.VerifiedBy ?? DBNull.Value);
+                        docCmd.Parameters.AddWithValue("@VerifiedAt", (object)docMeta.VerifiedAt ?? DBNull.Value);
+
+                        await docCmd.ExecuteNonQueryAsync();
                     }
                 }
+
+                // Step 6: Commit transaction
+                transaction.Commit();
+                return Ok(new { status = true, message = "Technician and documents inserted successfully." });
             }
             catch (Exception ex)
             {
-                // Log error as per your existing logic
+                if (transaction != null)
+                    transaction.Rollback();
+
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
             }
+            finally
+            {
+                if (conn != null && conn.State == ConnectionState.Open)
+                    conn.Close();
+            }
         }
+
 
         [HttpPut]
         [Route("UpdateTechnicians")]

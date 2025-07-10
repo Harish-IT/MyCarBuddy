@@ -1,7 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
 
 namespace MyCarBuddy.API.Models
@@ -64,5 +68,32 @@ namespace MyCarBuddy.API.Models
         public bool IsActive { get; set; }
         [BindNever]
         public int Status { get; set; }
+
+
+
+        // --- Add these for document uploads ---
+        public List<IFormFile> DocumentFiles { get; set; }
+
+        [FromForm]
+        public string DocumentsJson { get; set; }
+
+        [NotMapped]
+        public List<TechnicianDocumentModel> Documents
+        {
+            get => string.IsNullOrEmpty(DocumentsJson)
+                ? new List<TechnicianDocumentModel>()
+                : JsonConvert.DeserializeObject<List<TechnicianDocumentModel>>(DocumentsJson);
+        }
     }
+
+    public class TechnicianDocumentModel
+    {
+        public int DocTypeID { get; set; }      // 1=PAN, 2=Aadhaar, 3=DL, etc.
+        public string DocumentURL { get; set; } // Will be set in controller after saving file
+        public DateTime? UploadedAt { get; set; }
+        public bool Verified { get; set; }
+        public string VerifiedBy { get; set; }
+        public DateTime? VerifiedAt { get; set; }
+    }
+
 }
