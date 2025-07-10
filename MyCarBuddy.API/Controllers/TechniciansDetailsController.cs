@@ -161,6 +161,145 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the record.", error = ex.Message });
             }
         }
+
+
+        [HttpGet]
+
+        public IActionResult GetAllTechnicians()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using(SqlCommand cmd=new SqlCommand("sp_ListTechniciansDetails",conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader); // Load data into DataTable
+                        }
+                        conn.Close();
+                    }
+                }
+                // Convert DataTable to JSON-friendly structure
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+                return Ok(new { status = true, data = jsonResult });
+            }
+               
+            catch(Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { status=false, message = "An error occurred while retrieving the Technicians.", error = ex.Message });
+
+            }
+        }
+
+        [HttpGet("technicianid")]
+
+        public IActionResult GetTechnicianByID(int technicianid)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetTechniciansDetailsByID", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechID", technicianid);
+                        conn.Open();
+                        using(SqlDataReader reader=cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+
+                        }
+                        conn.Close();
+
+                    }
+                }
+                if(dt.Rows.Count==0)
+                {
+                    return NotFound(new { message = "Technicians not found...." });
+                }
+
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+
+                // If you expect only one row, you can return jsonResult[0]
+                return Ok(new { status = true, data = (object)(jsonResult.Count == 1 ? jsonResult[0] : jsonResult) });
+
+
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { status=false, message = "An Error occured while retrieving the Technicians by ID..", error = ex.Message });
+            }
+
+        }
+        [HttpDelete("technicianid")]
+
+        public IActionResult DeleteTechnician(int technicianid)
+        {
+            try
+            {
+                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using(SqlCommand cmd=new SqlCommand("sp_DeleteTechniciansDetails",conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@TechID", technicianid);
+                        conn.Open();
+                        using(SqlDataReader reader=cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int success = Convert.ToInt32(reader["Success"]);
+                                string message = reader["Message"].ToString();
+
+                                if (success == 1)
+                                    return Ok(new { status = true, message });
+                                else
+                                    return NotFound(new { status = false, message });
+                            }
+                            else
+                            {
+                                return StatusCode(500, new { status = false, message = "No response from database." });
+                            }
+                        }
+                        
+
+                    }
+                }
+
+            }
+            catch(Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while deleting the record.", error = ex.Message });
+
+            }
+        }
     }
 }
 
