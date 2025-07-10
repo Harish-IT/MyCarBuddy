@@ -49,8 +49,8 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CityID", distributor.CityID);
                         cmd.Parameters.AddWithValue("@Address", distributor.Address ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@GSTNumber", distributor.GSTNumber ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@CreatedDate", distributor.CreatedDate);
-                        cmd.Parameters.AddWithValue("@IsActive", distributor.IsActive);
+                        //cmd.Parameters.AddWithValue("@CreatedDate", distributor.CreatedDate);
+                       // cmd.Parameters.AddWithValue("@IsActive", distributor.IsActive);
                         conn.Open();
                         using(SqlDataReader reader=cmd.ExecuteReader())
                         {

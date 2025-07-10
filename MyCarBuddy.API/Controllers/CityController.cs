@@ -59,7 +59,7 @@ namespace MyCarBuddy.API.Controllers
                                 }
                                 else if (status == "SUCCESS")
                                 {
-                                    return Ok(new { message = "Record is Inserted", StateID = stateId });
+                                    return Ok(new { message = "Record is Inserted" });
                                 }
                             }
                         }

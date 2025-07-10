@@ -60,18 +60,18 @@ namespace MyCarBuddy.API.Controllers
                                 }
                                 else if (status == "SUCCESS")
                                 {
-                                    return Ok(new { message = "Record is Inserted", StateID = stateId });
+                                    return Ok(new {status=true, message = "Record is Inserted" });
                                 }
                             }
                         }
                     }
                 }
-                return Ok(new { message = "Record is Inserted" });
+                return Ok(new { status=false, message = "Record is Inserted" });
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
+                return StatusCode(500, new { status=false, message = "An error occurred while inserting the record.", error = ex.Message });
             }
         }
 
@@ -93,11 +93,14 @@ namespace MyCarBuddy.API.Controllers
                         conn.Close();
                         if (rows > 0)
                         {
-                            return Ok(new { message = "Record is updated" });
+
+                            return Ok(new { status = true, message = "Record is updated" });
+
+
                         }
                         else
                         {
-                            return NotFound(new { message = "Record is Not updated" });
+                            return NotFound(new { status = false , message = "Record is Not updated" });
                         }
                     }
                 }

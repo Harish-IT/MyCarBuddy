@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 public class DistributorsModel
@@ -38,7 +39,8 @@ public class DistributorsModel
     [RegularExpression(@"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$", ErrorMessage = "Invalid GST Number format.")]
     public string GSTNumber { get; set; }
 
+    [BindNever]
     public DateTime CreatedDate { get; set; }
-
+    [BindNever]
     public bool IsActive { get; set; }
 }
