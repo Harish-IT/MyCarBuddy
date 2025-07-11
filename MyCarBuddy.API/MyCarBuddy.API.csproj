@@ -3,9 +3,10 @@
     <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup><!--<Compile Remove="Program.cs" />-->
-  
-    <Folder Include="Images\" />
     <Folder Include="Documents\" />
+    <Folder Include="Images\BrandLogo\" />
+    <Folder Include="Images\FuelImages\" />
+    <Folder Include="Images\VehicleImages\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Braintree" Version="5.34.0" />

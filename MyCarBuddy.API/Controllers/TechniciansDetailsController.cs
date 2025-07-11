@@ -96,6 +96,8 @@ namespace MyCarBuddy.API.Controllers
         //        return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
         //    }
         //}
+
+
         [HttpPost]
         [Route("InsertTechnicians")]
         public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
@@ -161,7 +163,7 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
                     cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
                     cmd.Parameters.AddWithValue("@ProfileImage", (object)technicians.ProfileImage ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@CredatedBy", technicians.CredatedBy);
+                    cmd.Parameters.AddWithValue("@CredatedBy", technicians.CreatedBy);
 
                     var result = await cmd.ExecuteScalarAsync();
                     techId = Convert.ToInt32(result);
@@ -263,7 +265,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
                         cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
                         cmd.Parameters.AddWithValue("@ProfileImage", (object)imagePath ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ModifedBy", technicians.ModifedBy ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ModifedBy", technicians.ModifiedBy ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
                         cmd.Parameters.AddWithValue("@Status", technicians.Status);
 
@@ -372,7 +374,6 @@ namespace MyCarBuddy.API.Controllers
                 // If you expect only one row, you can return jsonResult[0]
                 return Ok(new { status = true, data = (object)(jsonResult.Count == 1 ? jsonResult[0] : jsonResult) });
 
-
             }
             catch (Exception ex)
             {
@@ -425,6 +426,59 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+        [HttpGet("GetTechniciansWithDocuments")]
+        public IActionResult GetTechniciansWithDocuments()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetTechniciansDetailsWithDocumentTypes", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                }
+
+                // Convert DataTable to JSON-friendly list
+                var jsonList = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col] is DBNull ? null : row[col];
+                    }
+                    jsonList.Add(dict);
+                }
+
+                return Ok(new
+                {
+                    status = true,
+                    message = "Technicians with documents retrieved successfully.",
+                    data = jsonList
+                });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new
+                {
+                    status = false,
+                    message = "An error occurred while fetching data.",
+                    error = ex.Message
+                });
+            }
+        }
+
     }
 }
 

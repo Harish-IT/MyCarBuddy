@@ -6,15 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.RegularExpressions;
 
 namespace MyCarBuddy.API.Models
 {
     public class TechniciansModel
     {
-       
+        [BindNever]
         public int TechID { get; set; }
 
+        [Required(ErrorMessage = "Dealer ID is required.")]
         public int DealerID { get; set; }
 
         [Required(ErrorMessage = "Full Name is required.")]
@@ -38,62 +38,81 @@ namespace MyCarBuddy.API.Models
 
         public string AddressLine2 { get; set; }
 
-        [Required(ErrorMessage = "City is required.")]
-
+        [Required(ErrorMessage = "State is required.")]
         public int StateID { get; set; }
 
-        [Required(ErrorMessage = "CityID is required")]
+        [Required(ErrorMessage = "City is required.")]
         public int CityID { get; set; }
-
 
         [Required(ErrorMessage = "Pincode is required.")]
         [RegularExpression(@"^\d{6}$", ErrorMessage = "Invalid Indian Pincode.")]
         public string Pincode { get; set; }
 
-        [BindNever] 
-        public string ProfileImage { get; set; } 
+        [BindNever]
+        public string ProfileImage { get; set; }
 
-        public IFormFile ProfileImageFile { get; set; } 
+        public IFormFile ProfileImageFile { get; set; }
 
         [BindNever]
         public DateTime CreatedDate { get; set; }
 
-        public string CredatedBy { get; set; }
+        [Required(ErrorMessage = "CreatedBy is required.")]
+        public string CreatedBy { get; set; }
+
         [BindNever]
         public DateTime? ModifiedDate { get; set; }
+
         [BindNever]
-        public string ModifedBy { get; set; }
+        public string ModifiedBy { get; set; }
 
         [BindNever]
         public bool IsActive { get; set; }
+
         [BindNever]
         public int Status { get; set; }
 
+        // --- Document Upload Handling ---
 
-
-        // --- Add these for document uploads ---
+        [NotMapped]
         public List<IFormFile> DocumentFiles { get; set; }
 
         [FromForm]
+        [NotMapped]
         public string DocumentsJson { get; set; }
 
         [NotMapped]
         public List<TechnicianDocumentModel> Documents
         {
-            get => string.IsNullOrEmpty(DocumentsJson)
-                ? new List<TechnicianDocumentModel>()
-                : JsonConvert.DeserializeObject<List<TechnicianDocumentModel>>(DocumentsJson);
+            get
+            {
+                try
+                {
+                    return string.IsNullOrEmpty(DocumentsJson)
+                        ? new List<TechnicianDocumentModel>()
+                        : JsonConvert.DeserializeObject<List<TechnicianDocumentModel>>(DocumentsJson);
+                }
+                catch
+                {
+                    return new List<TechnicianDocumentModel>();
+                }
+            }
         }
     }
 
     public class TechnicianDocumentModel
     {
-        public int DocTypeID { get; set; }      // 1=PAN, 2=Aadhaar, 3=DL, etc.
-        public string DocumentURL { get; set; } // Will be set in controller after saving file
+        public int DocTypeID { get; set; }              
+        public string DocumentURL { get; set; }        
         public DateTime? UploadedAt { get; set; }
         public bool Verified { get; set; }
         public string VerifiedBy { get; set; }
         public DateTime? VerifiedAt { get; set; }
     }
 
+    public class TechniciansDocumentTypes
+    {
+        public int DocuTypeID { get; set; }
+        public string DocumentType { get; set; }
+        
+    }
 }
