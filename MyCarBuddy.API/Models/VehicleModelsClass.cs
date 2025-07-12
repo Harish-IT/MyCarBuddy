@@ -9,7 +9,7 @@ namespace MyCarBuddy.API.Models
         public int? BrandID {  get; set; }
         public string ModelName { get; set; }
 
-        public int? FuelType {  get; set; }
+        public int? FuelTypeID {  get; set; }
 
         public string VehicleImage {  get; set; }
         public IFormFile VehicleImages1 { get; set; }

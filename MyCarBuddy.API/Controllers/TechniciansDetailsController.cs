@@ -127,7 +127,7 @@ namespace MyCarBuddy.API.Controllers
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images","Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
