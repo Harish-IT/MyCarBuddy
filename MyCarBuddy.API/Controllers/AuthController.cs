@@ -50,7 +50,7 @@ namespace MyCarBuddy.API.Controllers
                 }
                 else
                 {
-                    return Unauthorized(new { Success = false, Message = "Invalid login" });
+                    return Unauthorized(new { Success = false, Message = "Invalid logins" });
                 }
             }
         }
