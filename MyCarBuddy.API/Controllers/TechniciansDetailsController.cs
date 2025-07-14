@@ -30,8 +30,6 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
         }
 
-
-
         //[HttpPost]
         //[Route("InsertTechnicians")]
         //public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
@@ -127,7 +125,7 @@ namespace MyCarBuddy.API.Controllers
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images","Technicians");
+                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images","Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
@@ -236,7 +234,7 @@ namespace MyCarBuddy.API.Controllers
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 

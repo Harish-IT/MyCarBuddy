@@ -7,6 +7,7 @@
 	<!-- Optional: Include empty folders -->
 	<ItemGroup>
 		<Folder Include="Documents\" />
+		<Folder Include="wwwroot\Images\Customer\" />
 	</ItemGroup>
 
 	<!-- ✅ No need to include wwwroot files manually -->

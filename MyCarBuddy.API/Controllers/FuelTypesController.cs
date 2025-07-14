@@ -54,7 +54,7 @@ namespace MyCarBuddy.API.Controllers
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
                     // Set the subfolder path
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
+                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","Images", "FuelImages");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
@@ -136,7 +136,7 @@ namespace MyCarBuddy.API.Controllers
                 string fuelImagePath = fueltype.FuelImage; // Use existing if not updating
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-                    var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
+                    var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "FuelImages");
                     if (!Directory.Exists(fuelImageFolder))
                         Directory.CreateDirectory(fuelImageFolder);
 

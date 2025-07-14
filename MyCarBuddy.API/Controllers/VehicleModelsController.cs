@@ -50,7 +50,8 @@ namespace MyCarBuddy.API.Controllers
             {
                 if (vehiclemodelclass.VehicleImages1 != null && vehiclemodelclass.VehicleImages1.Length > 0)
                 {
-                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "VehicleModel");
+                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
+
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 
@@ -127,7 +128,9 @@ namespace MyCarBuddy.API.Controllers
             {
                 if (vehiclemodelclass.VehicleImages1 != null && vehiclemodelclass.VehicleImages1.Length > 0)
                 {
-                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "VehicleModel");
+                    //var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
+
+                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 

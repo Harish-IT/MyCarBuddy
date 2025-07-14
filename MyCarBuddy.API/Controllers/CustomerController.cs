@@ -53,7 +53,7 @@ namespace MyCarBuddy.API.Controllers
                 string profileImagePath = null;
                 if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
                 {
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
+                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "Customer");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
