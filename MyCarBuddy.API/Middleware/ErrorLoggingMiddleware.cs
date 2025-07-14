@@ -65,6 +65,8 @@ namespace MyCarBuddy.API.Middleware
             {
                 _logger.LogError(dbEx, "Error while logging to the database");
             }
+
         }
+
     }
 }
