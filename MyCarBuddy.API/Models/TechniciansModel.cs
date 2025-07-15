@@ -11,8 +11,8 @@ namespace MyCarBuddy.API.Models
 {
     public class TechniciansModel
     {
-        [BindNever]
-        public int TechID { get; set; }
+        
+        public int? TechID { get; set; }
 
         [Required(ErrorMessage = "Dealer ID is required.")]
         public int DealerID { get; set; }
@@ -62,11 +62,10 @@ namespace MyCarBuddy.API.Models
         [BindNever]
         public DateTime? ModifiedDate { get; set; }
 
-        [BindNever]
-        public string ModifiedBy { get; set; }
 
-        [BindNever]
-        public bool IsActive { get; set; }
+        public string ModifiedBy { get; set; } = null;
+
+        public bool? IsActive { get; set; }
 
         [BindNever]
         public int Status { get; set; }
@@ -101,6 +100,7 @@ namespace MyCarBuddy.API.Models
 
     public class TechnicianDocumentModel
     {
+        public int? DocID {  get; set; }
         public int DocTypeID { get; set; }              
         public string DocumentURL { get; set; }        
         public DateTime? UploadedAt { get; set; }

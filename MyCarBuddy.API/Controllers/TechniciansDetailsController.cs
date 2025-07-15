@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MyCarBuddy.API.Models;
 using MyCarBuddy.API.Utilities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -30,72 +31,9 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
         }
 
-        //[HttpPost]
-        //[Route("InsertTechnicians")]
-        //public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
-        //{
-        //    try
-        //    {
-        //        string imagePath = null;
-        //        if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
-        //        {
-        //            // Use only the original file name
-        //            var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-        //            var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images");
-        //            if (!Directory.Exists(imagesFolder))
-        //                Directory.CreateDirectory(imagesFolder);
+      
 
-        //            var filePath = Path.Combine(imagesFolder, fileName);
-        //            using (var stream = new FileStream(filePath, FileMode.Create))
-        //            {
-        //                await technicians.ProfileImageFile.CopyToAsync(stream);
-        //            }
-        //            imagePath = Path.Combine("Images", fileName).Replace("\\", "/");
-        //        }
-        //        // 2. Set the image path in the model (for DB)
-        //        technicians.ProfileImage = imagePath;
-
-        //        // 3. Insert into database
-        //        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-        //        {
-        //            using (SqlCommand cmd = new SqlCommand("sp_InsertTechniciansDetails", conn))
-        //            {
-        //                cmd.CommandType = CommandType.StoredProcedure;
-        //                cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
-        //                cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
-        //                cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
-        //                cmd.Parameters.AddWithValue("@Email", technicians.Email);
-        //                cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
-        //                cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
-        //                cmd.Parameters.AddWithValue("@AddressLine2", (object)technicians.AddressLine2 ?? DBNull.Value);
-        //                cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
-        //                cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
-        //                cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
-        //                cmd.Parameters.AddWithValue("@ProfileImage", (object)technicians.ProfileImage ?? DBNull.Value); // Save path, not file
-        //                cmd.Parameters.AddWithValue("@CredatedBy", technicians.CredatedBy);
-
-        //                conn.Open();
-        //                int row = cmd.ExecuteNonQuery();
-        //                if (row > 0)
-        //                {
-        //                    return Ok(new { status = true, message = "Technician is inserted" });
-        //                }
-        //                else
-        //                {
-        //                    return NotFound(new { status = false, message = "Technician is not inserted" });
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Log error as per your existing logic
-        //        ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-        //        return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
-        //    }
-        //}
-
-
+        #region InsertTechnicians
         [HttpPost]
         [Route("InsertTechnicians")]
         public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
@@ -221,20 +159,39 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
         [HttpPut]
         [Route("UpdateTechnicians")]
         public async Task<IActionResult> UpdateTechnicians([FromForm] TechniciansModel technicians)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
-                string imagePath = technicians.ProfileImage; // Default to existing path
+                // 1. Check if TechID exists in TechniciansDetails
+                bool techExists = false;
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM TechniciansDetails WHERE TechID = @TechID", conn))
+                    {
+                        checkCmd.Parameters.AddWithValue("@TechID", technicians.TechID);
+                        await conn.OpenAsync();
+                        techExists = (int)await checkCmd.ExecuteScalarAsync() > 0;
+                        conn.Close();
+                    }
+                }
 
-                // If a new image is uploaded, save it and update the path
+                if (!techExists)
+                    return NotFound(new { status = false, message = "Technician not found." });
+
+                // Handle profile image upload
+                string imagePath = technicians.ProfileImage;
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "Technicians");
+                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
@@ -243,42 +200,78 @@ namespace MyCarBuddy.API.Controllers
                     {
                         await technicians.ProfileImageFile.CopyToAsync(stream);
                     }
-                    imagePath = Path.Combine("Images", fileName).Replace("\\", "/");
+
+                    imagePath = Path.Combine("Technicians", fileName).Replace("\\", "/");
                 }
 
-                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                {
-                    using (SqlCommand cmd = new SqlCommand("sp_UpdateTechniciansDetails", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@TechID", technicians.TechID);
-                        cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
-                        cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
-                        cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
-                        cmd.Parameters.AddWithValue("@Email", technicians.Email);
-                        cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
-                        cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
-                        cmd.Parameters.AddWithValue("@AddressLine2", (object)technicians.AddressLine2 ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
-                        cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
-                        cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
-                        cmd.Parameters.AddWithValue("@ProfileImage", (object)imagePath ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ModifedBy", technicians.ModifiedBy ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
-                        cmd.Parameters.AddWithValue("@Status", technicians.Status);
+                // Loop through documents and insert/update each
+                int fileCount = technicians.DocumentFiles?.Count ?? 0;
+                int metaCount = technicians.Documents?.Count ?? 0;
+                int updatedTechID = (int)technicians.TechID;
 
-                        conn.Open();
-                        int row = cmd.ExecuteNonQuery();
-                        if (row > 0)
+                for (int i = 0; i < Math.Min(fileCount, metaCount); i++)
+                {
+                    var file = technicians.DocumentFiles[i];
+                    var docMeta = technicians.Documents[i];
+
+                    // Save document file
+                    var docFileName = Path.GetFileName(file.FileName);
+                    var documentsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Documents");
+                    if (!Directory.Exists(documentsFolder))
+                        Directory.CreateDirectory(documentsFolder);
+
+                    var docFilePath = Path.Combine(documentsFolder, docFileName);
+                    using (var stream = new FileStream(docFilePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                    var documentUrl = Path.Combine("Documents", docFileName).Replace("\\", "/");
+
+                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    {
+                        using (SqlCommand cmd = new SqlCommand("sp_UpdateTechniciansDetails", conn))
                         {
-                            return Ok(new { status = true, message = "Technician updated successfully." });
-                        }
-                        else
-                        {
-                            return NotFound(new { status = false, message = "Technician not found or not updated." });
+                            cmd.CommandType = CommandType.StoredProcedure;
+
+                            SqlParameter techIdParam = new SqlParameter("@TechID", SqlDbType.Int)
+                            {
+                                Direction = ParameterDirection.InputOutput,
+                                Value = updatedTechID
+                            };
+                            cmd.Parameters.Add(techIdParam);
+
+                            // Always update main table fields (including ProfileImage)
+                            cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
+                            cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
+                            cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
+                            cmd.Parameters.AddWithValue("@Email", technicians.Email);
+                            cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
+                            cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
+                            cmd.Parameters.AddWithValue("@AddressLine2", (object?)technicians.AddressLine2 ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
+                            cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
+                            cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
+                            cmd.Parameters.AddWithValue("@ProfileImage", (object?)imagePath ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@CreatedBy", technicians.CreatedBy ?? (object)DBNull.Value);
+                            cmd.Parameters.AddWithValue("@ModifedBy", (object?)technicians.ModifiedBy ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
+                            cmd.Parameters.AddWithValue("@Status", technicians.Status);
+
+                            cmd.Parameters.AddWithValue("@DocID", docMeta?.DocID ?? 0);
+                            cmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID ?? 0);
+                            cmd.Parameters.AddWithValue("@DocumentURL", documentUrl);
+                            cmd.Parameters.AddWithValue("@Verified", docMeta?.Verified ?? false);
+                            cmd.Parameters.AddWithValue("@VerifiedBy", (object?)docMeta?.VerifiedBy ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@VerifiedAt", (object?)docMeta?.VerifiedAt ?? DBNull.Value);
+
+                            await conn.OpenAsync();
+                            await cmd.ExecuteNonQueryAsync();
+                            updatedTechID = (int)techIdParam.Value;
                         }
                     }
                 }
+
+                return Ok(new { status = true, message = "Technician and documents updated successfully.", techId = updatedTechID });
             }
             catch (Exception ex)
             {
@@ -287,9 +280,8 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-
+        #region GetAllTechnicians
         [HttpGet]
-
         public IActionResult GetAllTechnicians()
         {
             try
@@ -329,6 +321,10 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
+
+        #region GetTechnicianByID
 
         [HttpGet("technicianid")]
 
@@ -380,6 +376,10 @@ namespace MyCarBuddy.API.Controllers
             }
 
         }
+
+        #endregion
+
+        #region DeleteTechnician
         [HttpDelete("technicianid")]
 
         public IActionResult DeleteTechnician(int technicianid)
@@ -424,6 +424,11 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
+
+        #region GetTechniciansWithDocuments
+
         [HttpGet("GetTechniciansWithDocuments")]
         public IActionResult GetTechniciansWithDocuments()
         {
@@ -477,6 +482,7 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
     }
 }
 
