@@ -26,7 +26,7 @@ namespace MyCarBuddy.API.Controllers
             _configuration = configuration;
             _logger = logger;
         }
-
+        #region InsertCity
         [HttpPost]
         public IActionResult InsertCity(CityModel city)
         {
@@ -74,6 +74,10 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
             }
         }
+
+        #endregion
+
+        #region UpdateCity
         [HttpPut]
         public IActionResult UpdateCity(CityModel city)
         {
@@ -114,6 +118,10 @@ namespace MyCarBuddy.API.Controllers
 
 
         }
+
+        #endregion
+
+        #region DeleteCity
         [HttpDelete("{cityId}")]
         public IActionResult DeleteCity(int cityId)
         {
@@ -152,9 +160,9 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while deleting the record.", error = ex.Message });
             }
         }
+        #endregion
 
-
-
+        #region GetAllCities
         [HttpGet]
         public IActionResult GetAllCities()
         {
@@ -193,6 +201,11 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the cities.", error = ex.Message });
             }
         }
+
+        #endregion
+
+        #region GetCityById
+
         [HttpGet("cityid")]
         public IActionResult GetCityById(int cityid)
         {
@@ -234,5 +247,6 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the city.", error = ex.Message });
             }
         }
+        #endregion
     }
 }

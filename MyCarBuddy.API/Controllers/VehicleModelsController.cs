@@ -50,14 +50,14 @@ namespace MyCarBuddy.API.Controllers
             {
                 if (vehiclemodelclass.VehicleImages1 != null && vehiclemodelclass.VehicleImages1.Length > 0)
                 {
-                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
+                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "VehicleModel");
 
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 
                     var originalFileName = Path.GetFileName(vehiclemodelclass.VehicleImages1.FileName);
                     filePath = Path.Combine(vehicleModelFolder, originalFileName);
-                    vehiclemodelimage = $"Images/VehicleModel/{originalFileName}";
+                    vehiclemodelimage = $"/VehicleModel/{originalFileName}";
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
@@ -130,14 +130,14 @@ namespace MyCarBuddy.API.Controllers
                 {
                     //var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
 
-                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
+                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images", "VehicleModel");
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 
                     var originalFileName = Path.GetFileName(vehiclemodelclass.VehicleImages1.FileName);
                     filePath = Path.Combine(vehicleModelFolder, originalFileName);
 
-                    vehiclemodelimage = $"Images/VehicleModel/{originalFileName}";
+                    vehiclemodelimage = $"/VehicleModel/{originalFileName}";
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {

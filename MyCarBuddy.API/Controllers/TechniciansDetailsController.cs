@@ -125,7 +125,7 @@ namespace MyCarBuddy.API.Controllers
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images","Technicians");
+                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images","Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
@@ -134,7 +134,7 @@ namespace MyCarBuddy.API.Controllers
                     {
                         await technicians.ProfileImageFile.CopyToAsync(stream);
                     }
-                    imagePath = Path.Combine("Images", fileName).Replace("\\", "/");
+                    imagePath = Path.Combine("Technicians", fileName).Replace("\\", "/");
                 }
 
                 technicians.ProfileImage = imagePath;

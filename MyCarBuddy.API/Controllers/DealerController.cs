@@ -30,6 +30,7 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
         }
 
+        #region InsertDealer
         [HttpPost]
 
         public IActionResult InsertDealer(DealerModel dealer)
@@ -82,6 +83,10 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
+
+        #region UpdateDealer
         [HttpPut]
         public IActionResult UpdateDealer(DealerModel dealer)
         {
@@ -133,7 +138,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
+        #region DeleteDealer
         [HttpDelete("dealerid")]
 
         public IActionResult DeleteDealer(int dealerid)
@@ -176,6 +183,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region GetAllDealer
+
         [HttpGet]
 
         public IActionResult GetAllDealer()
@@ -216,6 +227,10 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
+
+        #region GetDealerById
 
         [HttpGet("dealerid")]
 
@@ -262,5 +277,7 @@ namespace MyCarBuddy.API.Controllers
             }
 
         }
+
+        #endregion
     }
 }

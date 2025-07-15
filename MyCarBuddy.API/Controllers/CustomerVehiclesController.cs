@@ -31,6 +31,9 @@ namespace MyCarBuddy.API.Controllers
             _configuration = configuration;
             _logger = logger;
         }
+
+        #region InsertCustomerVehicle
+
         [HttpPost("InsertCustomerVehicle")]
 
         public async  Task<IActionResult> InsertCustomerVehicle(CustomerVehiclesModel customervehiclemodel)
@@ -66,6 +69,9 @@ namespace MyCarBuddy.API.Controllers
 
         }
 
+        #endregion
+
+        #region GetCustomerVehicles
 
         [HttpGet("GetCustomerVehicles")]
 
@@ -114,6 +120,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region GetCustomerVehiclebyID
 
         [HttpGet("CustVehicleId")]
 
@@ -162,6 +171,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region DeleteVehicleBrand
+
         [HttpDelete("CustomerVehicleID")]
         public IActionResult DeleteVehicleBrand(int custvehicleid)
         {
@@ -208,7 +221,7 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-
+        #endregion
 
     }
 }

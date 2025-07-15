@@ -54,7 +54,7 @@ namespace MyCarBuddy.API.Controllers
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
                     // Set the subfolder path
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","Images", "FuelImages");
+                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
@@ -66,11 +66,12 @@ namespace MyCarBuddy.API.Controllers
                     {
                         var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
                         filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                        brandLogoFileName = $"Images/FuelImages/{uniqueFileName}";
+                        //brandLogoFileName = "/FuelImages/{uniqueFileName}";
+                        brandLogoFileName = $"/FuelImages/{uniqueFileName}";
                     }
                     else
                     {
-                        brandLogoFileName = $"Images/FuelImages/{originalFileName}";
+                        brandLogoFileName = $"/FuelImages/{originalFileName}";
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
@@ -110,6 +111,10 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { status = false, message = "An error occurred while inserting the record.", error = ex.Message });
             }
         }
+
+
+
+
         [HttpPut("UpdateFuelType")]
         public async Task<IActionResult> UpdateFuelType([FromForm] FuelTypeModel fueltype)
         {
@@ -136,7 +141,7 @@ namespace MyCarBuddy.API.Controllers
                 string fuelImagePath = fueltype.FuelImage; // Use existing if not updating
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-                    var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "FuelImages");
+                    var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
                     if (!Directory.Exists(fuelImageFolder))
                         Directory.CreateDirectory(fuelImageFolder);
 
@@ -148,11 +153,11 @@ namespace MyCarBuddy.API.Controllers
                     {
                         var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
                         filePath = Path.Combine(fuelImageFolder, uniqueFileName);
-                        fuelImagePath = $"Images/FuelImages/{uniqueFileName}";
+                        fuelImagePath = $"/FuelImages/{uniqueFileName}";
                     }
                     else
                     {
-                        fuelImagePath = $"Images/FuelImages/{originalFileName}";
+                        fuelImagePath = $"/FuelImages/{originalFileName}";
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))

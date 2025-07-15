@@ -30,6 +30,7 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
         }
 
+        #region InsertCustomer
 
         [HttpPost("InsertCustomer")]
 
@@ -107,6 +108,8 @@ namespace MyCarBuddy.API.Controllers
 
 
         }
+
+        #endregion
 
 
     }

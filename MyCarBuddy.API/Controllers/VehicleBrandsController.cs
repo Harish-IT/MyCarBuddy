@@ -52,7 +52,7 @@ namespace MyCarBuddy.API.Controllers
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
                     // Set the subfolder path
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "Images", "BrandLogo");
+                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "BrandLogo");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
@@ -64,11 +64,11 @@ namespace MyCarBuddy.API.Controllers
                     {
                         var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
                         filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                        brandLogoFileName = $"Images/BrandLogo/{uniqueFileName}";
+                        brandLogoFileName = $"/BrandLogo/{uniqueFileName}";
                     }
                     else
                     {
-                        brandLogoFileName = $"Images/BrandLogo/{originalFileName}";
+                        brandLogoFileName = $"/BrandLogo/{originalFileName}";
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
@@ -133,7 +133,7 @@ namespace MyCarBuddy.API.Controllers
                 string brandLogoFileName = vehiclebrands.BrandLogo; 
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "Images", "BrandLogo");
+                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "BrandLogo");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
@@ -144,11 +144,11 @@ namespace MyCarBuddy.API.Controllers
                     {
                         var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
                         filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                        brandLogoFileName = $"Images/BrandLogo/{uniqueFileName}";
+                        brandLogoFileName = $"/BrandLogo/{uniqueFileName}";
                     }
                     else
                     {
-                        brandLogoFileName = $"Images/BrandLogo/{originalFileName}";
+                        brandLogoFileName = $"/BrandLogo/{originalFileName}";
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
