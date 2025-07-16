@@ -149,6 +149,7 @@
 	<ItemGroup>
 		<Folder Include="Documents\" />
 		<Folder Include="Images\Customer\" />
+		<Folder Include="wwwroot\" />
 	</ItemGroup>
 
 	<!-- ✅ No need to include wwwroot files manually -->

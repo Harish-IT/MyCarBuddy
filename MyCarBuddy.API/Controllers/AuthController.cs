@@ -23,7 +23,7 @@ namespace MyCarBuddy.API.Controllers
             _jwt = jwt;
         }
 
-        [HttpPost("technician-login")]
+        [HttpPost("Technician-login")]
         public IActionResult TechnicianLogin([FromBody] LoginRequest request)
         {
             string connectionString = _config.GetConnectionString("DefaultConnection");
@@ -42,6 +42,42 @@ namespace MyCarBuddy.API.Controllers
                 {
                     var techId = reader["TechID"].ToString();
                     string token = _jwt.GenerateToken(techId, "Technician");
+
+                    return Ok(new
+                    {
+                        Success = true,
+                        Token = token,
+                        Name = reader["FullName"],
+                        Email = reader["Email"]
+                    });
+                }
+                else
+                {
+                    return Unauthorized(new { Success = false, Message = "Invalid logins" });
+                }
+            }
+        }
+
+
+        [HttpPost("Admin-login")]
+        public IActionResult AdminLogin([FromBody] LoginRequest request)
+        {
+            string connectionString = _config.GetConnectionString("DefaultConnection");
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand("SP_AdminLogin", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Email", request.Email);
+                cmd.Parameters.AddWithValue("@Password", request.Password); // Later use hashed password
+
+                conn.Open();
+                var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    var AdminID = reader["AdminID"].ToString();
+                    string token = _jwt.GenerateToken(AdminID, "Admin");
 
                     return Ok(new
                     {
@@ -154,6 +190,35 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        [HttpPost("Techsend-otp")]
+        public IActionResult TechSendOtp([FromBody] CustomerLoginRequest request)
+        {
+            // 1. Generate OTP
+            string otp = new Random().Next(100000, 999999).ToString();
+
+            // 2. Save OTP via Stored Procedure
+            string connectionString = _config.GetConnectionString("DefaultConnection");
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                SqlCommand cmd = new SqlCommand("SP_SaveOTP", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@Email", request.Email);
+                cmd.Parameters.AddWithValue("@OTP", otp);
+                conn.Open();
+                cmd.ExecuteNonQuery();
+            }
+
+            // 3. Send OTP Email (configure SMTP as needed)
+            var smtpClient = new SmtpClient("smtp.gmail.com")
+            {
+                Port = 587,
+                Credentials = new NetworkCredential("prudhviraj.glansa@gmail.com", "ujiajcwsczeghshr"),
+                EnableSsl = true,
+            };
+            smtpClient.Send("harish@glansa.com", request.Email, "Your OTP Code", $"Your OTP is: {otp}");
+
+            return Ok(new { Success = true, Message = "OTP sent to email." });
+        }
 
 
 
