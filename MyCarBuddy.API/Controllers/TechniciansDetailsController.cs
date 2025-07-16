@@ -174,12 +174,13 @@ namespace MyCarBuddy.API.Controllers
 
             try
             {
-                // 1. Check if TechID exists in TechniciansDetails
+                // Check if technician exists
                 bool techExists = false;
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM TechniciansDetails WHERE TechID = @TechID", conn))
+                    using (SqlCommand checkCmd = new SqlCommand("sp_CheckTechnicianExists", conn))
                     {
+                        checkCmd.CommandType = CommandType.StoredProcedure;
                         checkCmd.Parameters.AddWithValue("@TechID", technicians.TechID);
                         await conn.OpenAsync();
                         techExists = (int)await checkCmd.ExecuteScalarAsync() > 0;
@@ -190,14 +191,30 @@ namespace MyCarBuddy.API.Controllers
                 if (!techExists)
                     return NotFound(new { status = false, message = "Technician not found." });
 
-                // Handle profile image upload
+                // Fetch existing profile image if not uploading new one
                 string imagePath = technicians.ProfileImage;
+                if (string.IsNullOrEmpty(imagePath) && (technicians.ProfileImageFile == null || technicians.ProfileImageFile.Length == 0))
+                {
+                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    {
+                        using (SqlCommand cmd = new SqlCommand("sp_GetTechnicianProfileImageByID", conn))
+                        {
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@TechID", technicians.TechID);
+                            await conn.OpenAsync();
+                            var result = await cmd.ExecuteScalarAsync();
+                            if (result != DBNull.Value && result != null)
+                                imagePath = result.ToString();
+                        }
+                    }
+                }
+
+                // Upload profile image if new file is provided
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
                     var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Technicians");
-                    if (!Directory.Exists(imagesFolder))
-                        Directory.CreateDirectory(imagesFolder);
+                    Directory.CreateDirectory(imagesFolder);
 
                     var filePath = Path.Combine(imagesFolder, fileName);
                     using (var stream = new FileStream(filePath, FileMode.Create))
@@ -208,74 +225,116 @@ namespace MyCarBuddy.API.Controllers
                     imagePath = Path.Combine("Technicians", fileName).Replace("\\", "/");
                 }
 
-                // Loop through documents and insert/update each
-                int fileCount = technicians.DocumentFiles?.Count ?? 0;
-                int metaCount = technicians.Documents?.Count ?? 0;
-                int updatedTechID = (int)technicians.TechID;
-
-                for (int i = 0; i < Math.Min(fileCount, metaCount); i++)
+                // Update technician info (without documents)
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    var file = technicians.DocumentFiles[i];
-                    var docMeta = technicians.Documents[i];
-
-                    // Save document file
-                    var docFileName = Path.GetFileName(file.FileName);
-                    var documentsFolder = Path.Combine(_env.WebRootPath, "Documents");
-                    if (!Directory.Exists(documentsFolder))
-                        Directory.CreateDirectory(documentsFolder);
-
-                    var docFilePath = Path.Combine(documentsFolder, docFileName);
-                    using (var stream = new FileStream(docFilePath, FileMode.Create))
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateTechniciansDetails", conn))
                     {
-                        await file.CopyToAsync(stream);
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@TechID", technicians.TechID);
+                        cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
+                        cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
+                        cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
+                        cmd.Parameters.AddWithValue("@Email", technicians.Email);
+                        cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
+                        cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
+                        cmd.Parameters.AddWithValue("@AddressLine2", (object?)technicians.AddressLine2 ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
+                        cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
+                        cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
+                        cmd.Parameters.AddWithValue("@ProfileImage", (object?)imagePath ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@CreatedBy", technicians.CreatedBy ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ModifedBy", (object?)technicians.ModifiedBy ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
+                        cmd.Parameters.AddWithValue("@Status", technicians.Status);
+
+                        // Document fields as NULL
+                        cmd.Parameters.AddWithValue("@DocID", DBNull.Value);
+                        cmd.Parameters.AddWithValue("@DocuTypeID", DBNull.Value);
+                        cmd.Parameters.AddWithValue("@DocumentURL", DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Verified", DBNull.Value);
+                        cmd.Parameters.AddWithValue("@VerifiedBy", DBNull.Value);
+                        cmd.Parameters.AddWithValue("@VerifiedAt", DBNull.Value);
+
+                        await conn.OpenAsync();
+                        await cmd.ExecuteNonQueryAsync();
                     }
-                    var documentUrl = Path.Combine("Documents", docFileName).Replace("\\", "/");
+                }
 
-                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                // Insert documents only if files and metadata are present
+                if ((technicians.DocumentFiles?.Count ?? 0) > 0 && (technicians.Documents?.Count ?? 0) > 0)
+                {
+                    for (int i = 0; i < Math.Min(technicians.DocumentFiles.Count, technicians.Documents.Count); i++)
                     {
-                        using (SqlCommand cmd = new SqlCommand("sp_UpdateTechniciansDetails", conn))
+                        var file = technicians.DocumentFiles[i];
+                        var docMeta = technicians.Documents[i];
+
+                        var docFileName = Path.GetFileName(file.FileName);
+                        var documentUrl = Path.Combine("Documents", docFileName).Replace("\\", "/");
+
+                        // Check if document already exists
+                        bool documentExists = false;
+                        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                         {
-                            cmd.CommandType = CommandType.StoredProcedure;
-
-                            SqlParameter techIdParam = new SqlParameter("@TechID", SqlDbType.Int)
+                            using (SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM TechnicianDocuments WHERE TechID = @TechID AND DocuTypeID = @DocuTypeID", conn))
                             {
-                                Direction = ParameterDirection.InputOutput,
-                                Value = updatedTechID
-                            };
-                            cmd.Parameters.Add(techIdParam);
+                                checkCmd.Parameters.AddWithValue("@TechID", technicians.TechID);
+                                checkCmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID ?? 0);
+                                await conn.OpenAsync();
+                                documentExists = (int)await checkCmd.ExecuteScalarAsync() > 0;
+                            }
+                        }
 
-                            // Always update main table fields (including ProfileImage)
-                            cmd.Parameters.AddWithValue("@DealerID", technicians.DealerID);
-                            cmd.Parameters.AddWithValue("@FullName", technicians.FullName);
-                            cmd.Parameters.AddWithValue("@PhoneNumber", technicians.PhoneNumber);
-                            cmd.Parameters.AddWithValue("@Email", technicians.Email);
-                            cmd.Parameters.AddWithValue("@PasswordHash", technicians.PasswordHash);
-                            cmd.Parameters.AddWithValue("@AddressLine1", technicians.AddressLine1);
-                            cmd.Parameters.AddWithValue("@AddressLine2", (object?)technicians.AddressLine2 ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@StateID", technicians.StateID);
-                            cmd.Parameters.AddWithValue("@CityID", technicians.CityID);
-                            cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
-                            cmd.Parameters.AddWithValue("@ProfileImage", (object?)imagePath ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@CreatedBy", technicians.CreatedBy ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@ModifedBy", (object?)technicians.ModifiedBy ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
-                            cmd.Parameters.AddWithValue("@Status", technicians.Status);
+                        if (documentExists)
+                            continue;
 
-                            cmd.Parameters.AddWithValue("@DocID", docMeta?.DocID ?? 0);
-                            cmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID ?? 0);
-                            cmd.Parameters.AddWithValue("@DocumentURL", documentUrl);
-                            cmd.Parameters.AddWithValue("@Verified", docMeta?.Verified ?? false);
-                            cmd.Parameters.AddWithValue("@VerifiedBy", (object?)docMeta?.VerifiedBy ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@VerifiedAt", (object?)docMeta?.VerifiedAt ?? DBNull.Value);
+                        var documentsFolder = Path.Combine(_env.WebRootPath, "Documents");
+                        Directory.CreateDirectory(documentsFolder);
+                        var docFilePath = Path.Combine(documentsFolder, docFileName);
+                        using (var stream = new FileStream(docFilePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
 
-                            await conn.OpenAsync();
-                            await cmd.ExecuteNonQueryAsync();
-                            updatedTechID = (int)techIdParam.Value;
+                        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                        {
+                            using (SqlCommand cmd = new SqlCommand("sp_UpdateTechniciansDetails", conn))
+                            {
+                                cmd.CommandType = CommandType.StoredProcedure;
+
+                                cmd.Parameters.AddWithValue("@TechID", technicians.TechID);
+                                cmd.Parameters.AddWithValue("@DealerID", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@FullName", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@PhoneNumber", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Email", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@PasswordHash", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@AddressLine1", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@AddressLine2", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@StateID", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@CityID", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Pincode", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@ProfileImage", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@CreatedBy", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@ModifedBy", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@IsActive", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Status", DBNull.Value);
+
+                                cmd.Parameters.AddWithValue("@DocID", docMeta?.DocID ?? 0);
+                                cmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID != null ? docMeta.DocTypeID : (object)DBNull.Value);
+                                cmd.Parameters.AddWithValue("@DocumentURL", documentUrl);
+                                cmd.Parameters.AddWithValue("@Verified", docMeta?.Verified ?? false);
+                                cmd.Parameters.AddWithValue("@VerifiedBy", (object?)docMeta?.VerifiedBy ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@VerifiedAt", (object?)docMeta?.VerifiedAt ?? DBNull.Value);
+
+                                await conn.OpenAsync();
+                                await cmd.ExecuteNonQueryAsync();
+                            }
                         }
                     }
                 }
 
-                return Ok(new { status = true, message = "Technician and documents updated successfully.", techId = updatedTechID });
+                return Ok(new { status = true, message = "Technician and documents updated successfully.", techId = technicians.TechID });
             }
             catch (Exception ex)
             {
@@ -283,6 +342,9 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the record.", error = ex.Message });
             }
         }
+
+
+
 
         #region GetAllTechnicians
         [HttpGet]
@@ -315,7 +377,7 @@ namespace MyCarBuddy.API.Controllers
                     }
                     jsonResult.Add(dict);
                 }
-                return Ok(new { status = true, data = jsonResult });
+                return Ok(new { status = true,jsonResult });
             }
                
             catch(Exception ex)

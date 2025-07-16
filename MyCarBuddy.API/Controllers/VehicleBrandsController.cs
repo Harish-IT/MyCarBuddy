@@ -113,8 +113,9 @@ namespace MyCarBuddy.API.Controllers
 
 
         }
-        [HttpPut("UpdateVehicleBrand")]
 
+
+        [HttpPut("UpdateVehicleBrand")]
         public async Task<IActionResult> UpdateVehicleBrand([FromForm] VehicleBrandsModel vehiclebrands)
         {
             try
@@ -133,7 +134,28 @@ namespace MyCarBuddy.API.Controllers
                     return BadRequest(new { status = false, message = $"The following fields are required: {string.Join(", ", missingFields)}" });
                 }
 
-                string brandLogoFileName = vehiclebrands.BrandLogo; 
+                string brandLogoFileName = vehiclebrands.BrandLogo;
+
+                // Fetch existing image from DB if new one not selected
+                if (string.IsNullOrEmpty(brandLogoFileName) && (vehiclebrands.BrandLogoImage == null || vehiclebrands.BrandLogoImage.Length == 0))
+                {
+                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetBrandLogoImageByID", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@BrandID", vehiclebrands.BrandID);
+                        await conn.OpenAsync();
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                brandLogoFileName = reader["BrandLogo"]?.ToString();
+                            }
+                        }
+                    }
+                }
+
+                // Handle new image upload
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
                     var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "BrandLogo");
@@ -160,9 +182,10 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                // Update to database
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_UpdateVehicleBrands",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateVehicleBrands", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@BrandID", vehiclebrands.BrandID);
@@ -174,14 +197,10 @@ namespace MyCarBuddy.API.Controllers
 
                         await conn.OpenAsync();
                         await cmd.ExecuteNonQueryAsync();
-
-
                     }
                 }
 
                 return Ok(new { status = true, message = "Brand updated successfully." });
-
-
             }
             catch (SqlException ex)
             {
@@ -194,6 +213,9 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { status = false, message = "An error occurred while updating the record.", error = ex.Message });
             }
         }
+
+
+
 
         [HttpGet("GetVehicleBrands")]
 

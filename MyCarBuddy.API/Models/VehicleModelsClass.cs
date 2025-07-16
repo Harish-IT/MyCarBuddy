@@ -19,6 +19,12 @@ namespace MyCarBuddy.API.Models
         public int? ModifiedBy {  get; set; }
         public int? Status {  get; set; }
 
+    
+
+
+
+
+
 
     }
 }

@@ -122,7 +122,6 @@ namespace MyCarBuddy.API.Controllers
         {
             try
             {
-                // Validate required fields
                 var missingFields = new List<string>();
                 if (fueltype.FuelTypeID == null || fueltype.FuelTypeID <= 0)
                     missingFields.Add("FuelTypeID");
@@ -132,18 +131,35 @@ namespace MyCarBuddy.API.Controllers
                     missingFields.Add("ModifiedBy");
                 if (fueltype.Status == null)
                     missingFields.Add("Status");
-                // Optionally validate IsActive if you want to require it
 
                 if (missingFields.Any())
                 {
                     return BadRequest(new { status = false, message = $"The following fields are required: {string.Join(", ", missingFields)}" });
                 }
 
-                // Handle FuelImage upload (save with original name, ensure uniqueness)
-                string fuelImagePath = fueltype.FuelImage; // Use existing if not updating
+                string fuelImagePath = fueltype.FuelImage;
+
+
+                if ((fueltype.FuelImage1 == null || fueltype.FuelImage1.Length == 0) && string.IsNullOrEmpty(fuelImagePath))
+                {
+                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetFuelImageByID", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@FuelTypeID", fueltype.FuelTypeID);
+
+                        await conn.OpenAsync();
+                        var result = await cmd.ExecuteScalarAsync();
+                        if (result != null)
+                        {
+                            fuelImagePath = result.ToString();
+                        }
+                    }
+                }
+
+
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-                    //var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
 
                     var fuelImageFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
                     if (!Directory.Exists(fuelImageFolder))
@@ -152,7 +168,6 @@ namespace MyCarBuddy.API.Controllers
                     var originalFileName = Path.GetFileName(fueltype.FuelImage1.FileName);
                     var filePath = Path.Combine(fuelImageFolder, originalFileName);
 
-                    // Ensure uniqueness
                     if (System.IO.File.Exists(filePath))
                     {
                         var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";

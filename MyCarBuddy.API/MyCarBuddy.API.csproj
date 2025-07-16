@@ -5,6 +5,17 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Documents\**" />
+	  <Compile Remove="Images\**" />
+	  <Content Remove="Documents\**" />
+	  <Content Remove="Images\**" />
+	  <EmbeddedResource Remove="Documents\**" />
+	  <EmbeddedResource Remove="Images\**" />
+	  <None Remove="Documents\**" />
+	  <None Remove="Images\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Remove="wwwroot\Images\BrandLogo\ford-logo-png_seeklogo-56584.png" />
 	  <None Remove="wwwroot\Images\BrandLogo\logo-200-01 %281%29.png" />
 	  <None Remove="wwwroot\Images\BrandLogo\prudhviiii.jpeg" />
@@ -34,10 +45,8 @@
 	<ItemGroup>
 		<Folder Include="wwwroot\Documents\" />
 		<Folder Include="wwwroot\Images\Customer\" />
-	</ItemGroup>
-	<ItemGroup>
-		<Folder Include="Documents\" />
-		<Folder Include="Images\Customer\" />
+		<Folder Include="wwwroot\Images\Category\" />
+		<Folder Include="wwwroot\Images\SubCategory1\" />
 	</ItemGroup>
 
 	<!-- ✅ No need to include wwwroot files manually -->

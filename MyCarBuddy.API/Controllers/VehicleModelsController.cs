@@ -121,7 +121,11 @@ namespace MyCarBuddy.API.Controllers
 
 
         #region Update vehicle Model
+
+
         [HttpPut("UpdateVehicleModel")]
+
+
         public async Task<IActionResult> UpdateVehicleModel([FromForm] VehicleModelsClass vehiclemodelclass)
         {
             string vehiclemodelimage = null;
@@ -129,11 +133,30 @@ namespace MyCarBuddy.API.Controllers
 
             try
             {
+                // Step 1: Fetch old image if not uploading new one
+                if (string.IsNullOrEmpty(vehiclemodelclass.VehicleImage) && (vehiclemodelclass.VehicleImages1 == null || vehiclemodelclass.VehicleImages1.Length == 0))
+                {
+                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetVehicleModelImageByID", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@ModelID", vehiclemodelclass.ModelID ?? 0);
+                        await conn.OpenAsync();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                vehiclemodelimage = reader["VehicleImage"]?.ToString();
+                            }
+                        }
+                    }
+                }
+
+                // Step 2: Handle new image upload
                 if (vehiclemodelclass.VehicleImages1 != null && vehiclemodelclass.VehicleImages1.Length > 0)
                 {
-                    //var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
-
-                    var vehicleModelFolder = Path.Combine(_env.WebRootPath,  "Images", "VehicleModel");
+                    var vehicleModelFolder = Path.Combine(_env.WebRootPath, "Images", "VehicleModel");
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 
@@ -147,11 +170,8 @@ namespace MyCarBuddy.API.Controllers
                         await vehiclemodelclass.VehicleImages1.CopyToAsync(stream);
                     }
                 }
-                else
-                {
-                    vehiclemodelimage = vehiclemodelclass.VehicleImage;
-                }
 
+                // Step 3: Update vehicle model
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_UpdateVehicleModel", conn))
@@ -192,6 +212,7 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { status = false, message = "An error occurred while updating the record.", error = ex.Message });
             }
         }
+
 
         #endregion
 

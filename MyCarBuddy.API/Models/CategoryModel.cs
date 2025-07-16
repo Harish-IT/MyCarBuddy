@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 
 namespace MyCarBuddy.API.Models
 {
@@ -12,6 +13,13 @@ namespace MyCarBuddy.API.Models
         public int? CreatedBy { get; set; }
         public int? ModifiedBy { get; set; }
 
+        public IFormFile IconImage1 { get; set; }
+
+        public string IconImage { get; set; } = string.Empty;
+
+        public IFormFile ThumbnailImage1 { get; set; }
+
+        public string ThumbnailImage { get; set; } = string.Empty;
 
 
 

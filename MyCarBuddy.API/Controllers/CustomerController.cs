@@ -90,8 +90,8 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@AlternateNumber", (object?)model.AlternateNumber ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@Email", model.Email);
                         cmd.Parameters.AddWithValue("@ProfileImage", (object?)profileImagePath ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@StateID", model.StateID);
-                        cmd.Parameters.AddWithValue("@CityID", model.CityID);
+                       // cmd.Parameters.AddWithValue("@StateID", model.StateID);
+                      //  cmd.Parameters.AddWithValue("@CityID", model.CityID);
 
                         await conn.OpenAsync();
                         var result = await cmd.ExecuteScalarAsync();
