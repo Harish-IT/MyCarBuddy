@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -23,11 +24,13 @@ namespace MyCarBuddy.API.Controllers
 
         private readonly IConfiguration _configuration;
         private readonly ILogger<CustomerController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public CustomerController(IConfiguration configuration, ILogger<CustomerController> logger)
+        public CustomerController(IConfiguration configuration, ILogger<CustomerController> logger, IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
+            _env=env;
         }
 
         #region InsertCustomer
@@ -54,7 +57,8 @@ namespace MyCarBuddy.API.Controllers
                 string profileImagePath = null;
                 if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
                 {
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "Customer");
+                   // var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images", "Customer");
+                    var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Customer");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
@@ -73,7 +77,7 @@ namespace MyCarBuddy.API.Controllers
                         await model.ProfileImageFile.CopyToAsync(stream);
                     }
 
-                    profileImagePath = Path.Combine("Images", originalFileName).Replace("\\", "/");
+                    profileImagePath = Path.Combine("Customer", originalFileName).Replace("\\", "/");
                 }
                 int newCustId;
                 using (SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))

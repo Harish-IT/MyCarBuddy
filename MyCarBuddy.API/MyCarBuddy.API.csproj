@@ -5,150 +5,54 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="Images\BrandLogo\ford-logo-png_seeklogo-56584.png" />
-	  <None Remove="Images\BrandLogo\logo-200-01 %281%29.png" />
-	  <None Remove="Images\BrandLogo\prudhviiii.jpeg" />
-	  <None Remove="Images\BrandLogo\Screenshot %281%29.png" />
-	  <None Remove="Images\BrandLogo\Screenshot %282%29.png" />
-	  <None Remove="Images\BrandLogo\Screenshot %283%29.png" />
-	  <None Remove="Images\BrandLogo\Screenshot %285%29.png" />
-	  <None Remove="Images\BrandLogo\whitecar.png" />
-	  <None Remove="Images\FuelImages\16bd394b-f7b6-43a1-85ca-e5f5d8dcfdb3_Screenshot %285%29.png" />
-	  <None Remove="Images\FuelImages\39626299-c4ac-431e-833b-787d188720a2_Screenshot %284%29.png" />
-	  <None Remove="Images\FuelImages\74d05bbf-833e-4a77-9544-6ce5ffd7b927_Screenshot %283%29.png" />
-	  <None Remove="Images\FuelImages\d31303b1-d3f1-462a-802d-487722b9d5af_Screenshot %282%29.png" />
-	  <None Remove="Images\FuelImages\Screenshot %281%29.png" />
-	  <None Remove="Images\FuelImages\Screenshot %282%29.png" />
-	  <None Remove="Images\FuelImages\Screenshot %283%29.png" />
-	  <None Remove="Images\FuelImages\Screenshot %284%29.png" />
-	  <None Remove="Images\FuelImages\Screenshot %285%29.png" />
-	  <None Remove="Images\Technicians\images.jpeg" />
-	  <None Remove="Images\Technicians\logo-200-01 %281%29.png" />
-	  <None Remove="Images\Technicians\prudhviiii.jpeg" />
-	  <None Remove="Images\VehicleModel\images.jpeg" />
-	  <None Remove="Images\VehicleModel\prudhviiii.jpeg" />
-	  <None Remove="Images\VehicleModel\Screenshot %281%29.png" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="Images\BrandLogo\219ebe62-5771-4a59-9129-6468ecd97484_logo-200-01 (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\26cd392d-a0d5-4c8f-9e98-010662ae15c6_Screenshot (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\3336be11-e870-4d36-8960-3eaa0281fe15_prudhviiii.jpeg">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\c639dabb-e2d0-4187-9bb5-c6e163d48520_Screenshot (5).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\de9c6670-9a81-4321-9437-291a69ce2bf2_logo-200-01 (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\ford-logo-png_seeklogo-56584.png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\logo-200-01 (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\prudhviiii.jpeg">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\Screenshot (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\Screenshot (2).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\Screenshot (3).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\Screenshot (5).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\BrandLogo\whitecar.png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\16bd394b-f7b6-43a1-85ca-e5f5d8dcfdb3_Screenshot (5).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\39626299-c4ac-431e-833b-787d188720a2_Screenshot (4).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\74d05bbf-833e-4a77-9544-6ce5ffd7b927_Screenshot (3).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\d31303b1-d3f1-462a-802d-487722b9d5af_Screenshot (2).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\Screenshot (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\Screenshot (2).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\Screenshot (3).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\Screenshot (4).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\FuelImages\Screenshot (5).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\Technicians\images.jpeg">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\Technicians\logo-200-01 (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\Technicians\prudhviiii.jpeg">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\VehicleModel\images.jpeg">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\VehicleModel\prudhviiii.jpeg">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
-	  <Content Include="Images\VehicleModel\Screenshot (1).png">
-	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-	  </Content>
+	  <None Remove="wwwroot\Images\BrandLogo\ford-logo-png_seeklogo-56584.png" />
+	  <None Remove="wwwroot\Images\BrandLogo\logo-200-01 %281%29.png" />
+	  <None Remove="wwwroot\Images\BrandLogo\prudhviiii.jpeg" />
+	  <None Remove="wwwroot\Images\BrandLogo\Screenshot %281%29.png" />
+	  <None Remove="wwwroot\Images\BrandLogo\Screenshot %282%29.png" />
+	  <None Remove="wwwroot\Images\BrandLogo\Screenshot %283%29.png" />
+	  <None Remove="wwwroot\Images\BrandLogo\Screenshot %285%29.png" />
+	  <None Remove="wwwroot\Images\BrandLogo\whitecar.png" />
+	  <None Remove="wwwroot\Images\FuelImages\16bd394b-f7b6-43a1-85ca-e5f5d8dcfdb3_Screenshot %285%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\39626299-c4ac-431e-833b-787d188720a2_Screenshot %284%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\74d05bbf-833e-4a77-9544-6ce5ffd7b927_Screenshot %283%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\d31303b1-d3f1-462a-802d-487722b9d5af_Screenshot %282%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\Screenshot %281%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\Screenshot %282%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\Screenshot %283%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\Screenshot %284%29.png" />
+	  <None Remove="wwwroot\Images\FuelImages\Screenshot %285%29.png" />
+	  <None Remove="wwwroot\Images\Technicians\images.jpeg" />
+	  <None Remove="wwwroot\Images\Technicians\logo-200-01 %281%29.png" />
+	  <None Remove="wwwroot\Images\Technicians\prudhviiii.jpeg" />
+	  <None Remove="wwwroot\Images\VehicleModel\images.jpeg" />
+	  <None Remove="wwwroot\Images\VehicleModel\prudhviiii.jpeg" />
+	  <None Remove="wwwroot\Images\VehicleModel\Screenshot %281%29.png" />
 	</ItemGroup>
 
 	<!-- Optional: Include empty folders -->
 	<ItemGroup>
-		<Folder Include="Documents\" />
-		<Folder Include="Images\Customer\" />
+		<Folder Include="wwwroot\Documents\" />
+		<Folder Include="wwwroot\Images\Customer\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="wwwroot\Documents\Assessment on Science Inquiry and Experimentation.pdf" />
+	  <None Include="wwwroot\Documents\kundena.Bixapathi %281%29.pdf" />
+	  <None Include="wwwroot\Documents\Screenshot %282%29.png" />
+	  <None Include="wwwroot\Documents\Screenshot %285%29.png" />
+	  <None Include="wwwroot\Documents\srinu.pdf" />
+	  <None Include="wwwroot\Images\BrandLogo\219ebe62-5771-4a59-9129-6468ecd97484_logo-200-01 %281%29.png" />
+	  <None Include="wwwroot\Images\BrandLogo\26cd392d-a0d5-4c8f-9e98-010662ae15c6_Screenshot %281%29.png" />
+	  <None Include="wwwroot\Images\BrandLogo\3336be11-e870-4d36-8960-3eaa0281fe15_prudhviiii.jpeg" />
+	  <None Include="wwwroot\Images\BrandLogo\c639dabb-e2d0-4187-9bb5-c6e163d48520_Screenshot %285%29.png" />
+	  <None Include="wwwroot\Images\BrandLogo\de9c6670-9a81-4321-9437-291a69ce2bf2_logo-200-01 %281%29.png" />
+	  <None Include="wwwroot\Images\Technicians\download %282%29.jpg" />
+	  <None Include="wwwroot\Images\Technicians\istockphoto-1460883145-612x612.jpeg" />
+	  <None Include="wwwroot\Images\Technicians\Screenshot %282%29.png" />
+	  <None Include="wwwroot\Images\Technicians\Screenshot %285%29.png" />
+	  <None Include="wwwroot\Images\VehicleModel\images.jpg" />
+	  <None Include="wwwroot\Images\VehicleModel\istockphoto-1460883145-612x612.jpeg" />
+	  <None Include="wwwroot\Images\VehicleModel\istockphoto-1460883145-612x612.jpg" />
 	</ItemGroup>
 
 	<!-- ✅ No need to include wwwroot files manually -->

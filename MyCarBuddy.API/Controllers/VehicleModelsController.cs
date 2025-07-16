@@ -1,4 +1,5 @@
 ﻿using Braintree;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.Data.SqlClient;
@@ -25,11 +26,13 @@ namespace MyCarBuddy.API.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<VehicleModelsController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public VehicleModelsController(IConfiguration configuration, ILogger<VehicleModelsController> logger)
+        public VehicleModelsController(IConfiguration configuration, ILogger<VehicleModelsController> logger,IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
+            _env = env;
         }
 
 
@@ -50,7 +53,7 @@ namespace MyCarBuddy.API.Controllers
             {
                 if (vehiclemodelclass.VehicleImages1 != null && vehiclemodelclass.VehicleImages1.Length > 0)
                 {
-                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "VehicleModel");
+                    var vehicleModelFolder = Path.Combine(_env.WebRootPath, "Images", "VehicleModel");
 
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
@@ -130,7 +133,7 @@ namespace MyCarBuddy.API.Controllers
                 {
                     //var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "VehicleModel");
 
-                    var vehicleModelFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images", "VehicleModel");
+                    var vehicleModelFolder = Path.Combine(_env.WebRootPath,  "Images", "VehicleModel");
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 

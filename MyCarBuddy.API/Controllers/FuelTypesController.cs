@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -24,11 +25,13 @@ namespace MyCarBuddy.API.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<FuelTypesController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public FuelTypesController(IConfiguration configuration, ILogger<FuelTypesController> logger)
+        public FuelTypesController(IConfiguration configuration, ILogger<FuelTypesController> logger,IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
+            _env = env;
         }
 
 
@@ -38,7 +41,6 @@ namespace MyCarBuddy.API.Controllers
         {
             try
             {
-                // Validate required fields
                 var missingFields = new List<string>();
                 if (string.IsNullOrWhiteSpace(fueltype.FuelTypeName))
                     missingFields.Add("FuelTypeName");
@@ -49,19 +51,19 @@ namespace MyCarBuddy.API.Controllers
                 }
 
 
-                // Handle BrandLogo upload (save with original name, ensure uniqueness)
                 string brandLogoFileName = null;
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-                    // Set the subfolder path
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
+                    
+                    //var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
+                    var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
+
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
                     var originalFileName = Path.GetFileName(fueltype.FuelImage1.FileName);
                     var filePath = Path.Combine(brandLogoFolder, originalFileName);
 
-                    // Ensure uniqueness
                     if (System.IO.File.Exists(filePath))
                     {
                         var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
@@ -141,7 +143,9 @@ namespace MyCarBuddy.API.Controllers
                 string fuelImagePath = fueltype.FuelImage; // Use existing if not updating
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-                    var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
+                    //var fuelImageFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
+
+                    var fuelImageFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
                     if (!Directory.Exists(fuelImageFolder))
                         Directory.CreateDirectory(fuelImageFolder);
 

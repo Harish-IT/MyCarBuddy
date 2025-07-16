@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -24,11 +25,13 @@ namespace MyCarBuddy.API.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<TechniciansDetailsController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public TechniciansDetailsController(IConfiguration configuration, ILogger<TechniciansDetailsController> logger)
+        public TechniciansDetailsController(IConfiguration configuration, ILogger<TechniciansDetailsController> logger,IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
+            _env=env;
         }
 
       
@@ -63,7 +66,8 @@ namespace MyCarBuddy.API.Controllers
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images","Technicians");
+                    //var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images","Technicians");
+                    var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
@@ -113,7 +117,7 @@ namespace MyCarBuddy.API.Controllers
 
                     // Save document file
                     var docFileName = Path.GetFileName(file.FileName);
-                    var documentsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Documents");
+                    var documentsFolder = Path.Combine(_env.WebRootPath, "Documents");
                     if (!Directory.Exists(documentsFolder))
                         Directory.CreateDirectory(documentsFolder);
 
@@ -191,7 +195,7 @@ namespace MyCarBuddy.API.Controllers
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
                     var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "Technicians");
+                    var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
@@ -216,7 +220,7 @@ namespace MyCarBuddy.API.Controllers
 
                     // Save document file
                     var docFileName = Path.GetFileName(file.FileName);
-                    var documentsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Documents");
+                    var documentsFolder = Path.Combine(_env.WebRootPath, "Documents");
                     if (!Directory.Exists(documentsFolder))
                         Directory.CreateDirectory(documentsFolder);
 

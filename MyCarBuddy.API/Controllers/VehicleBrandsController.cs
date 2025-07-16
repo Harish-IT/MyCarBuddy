@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -23,11 +24,13 @@ namespace MyCarBuddy.API.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<VehicleBrandsController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public VehicleBrandsController(IConfiguration configuration, ILogger<VehicleBrandsController> logger)
+        public VehicleBrandsController(IConfiguration configuration, ILogger<VehicleBrandsController> logger,IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
+            _env = env;
         }
 
         [HttpPost("InsertVehicleBrand")]
@@ -52,7 +55,7 @@ namespace MyCarBuddy.API.Controllers
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
                     // Set the subfolder path
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "BrandLogo");
+                    var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "BrandLogo");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
@@ -133,7 +136,7 @@ namespace MyCarBuddy.API.Controllers
                 string brandLogoFileName = vehiclebrands.BrandLogo; 
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
-                    var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "BrandLogo");
+                    var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "BrandLogo");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
