@@ -12,6 +12,8 @@ namespace MyCarBuddy.API.Models
         public string Name {  get; set; }
 
         public string Description { get; set; }
+
+        public bool? IsActive { get; set; }
        
         public IFormFile IconImage1 { get; set; }
         public string IconImage { get; set; } = string.Empty;

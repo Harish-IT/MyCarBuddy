@@ -195,7 +195,7 @@ namespace MyCarBuddy.API.Controllers
                         await subcategory1.IconImage1.CopyToAsync(stream);
                     }
 
-                    iconImagePath = Path.Combine("Images", "SubCategory1", iconFileName).Replace("\\", "/");
+                    iconImagePath = Path.Combine( "SubCategory1", iconFileName).Replace("\\", "/");
                 }
 
                 if (subcategory1.ThumbnailImage1 != null && subcategory1.ThumbnailImage1.Length > 0)
@@ -222,7 +222,7 @@ namespace MyCarBuddy.API.Controllers
                         await subcategory1.ThumbnailImage1.CopyToAsync(stream);
                     }
 
-                    thumbnailImagePath = Path.Combine("Images", "SubCategory1", thumbFileName).Replace("\\", "/");
+                    thumbnailImagePath = Path.Combine("SubCategory1", thumbFileName).Replace("\\", "/");
                 }
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
@@ -233,7 +233,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CategoryID", subcategory1.CategoryID);
                         cmd.Parameters.AddWithValue("@SubCategoryName", subcategory1.SubCategoryName);
                         cmd.Parameters.AddWithValue("@Description", subcategory1.Description);
-
+                        cmd.Parameters.AddWithValue("@IsActive", subcategory1.IsActive);
                     
                         cmd.Parameters.AddWithValue("@IconImage", iconImagePath);
                         cmd.Parameters.AddWithValue("@ThumbnailImage", thumbnailImagePath);
