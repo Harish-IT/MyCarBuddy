@@ -19,15 +19,15 @@ namespace MyCarBuddy.API.Controllers
     //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoryController : ControllerBase
+    public class SubCategory2Controller : ControllerBase
     {
 
         private readonly IConfiguration _configuration;
-        private readonly ILogger<CategoryController> _logger;
+        private readonly ILogger<SubCategory2Controller> _logger;
         private readonly IWebHostEnvironment _env;
 
 
-        public CategoryController(IConfiguration configuration, ILogger<CategoryController> logger, IWebHostEnvironment env)
+        public SubCategory2Controller(IConfiguration configuration, ILogger<SubCategory2Controller> logger, IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
@@ -36,21 +36,21 @@ namespace MyCarBuddy.API.Controllers
 
         #region Insert Category
 
-        [HttpPost("AddCategory")]
-        public async Task<IActionResult> Category([FromForm] CategoryModel category)
+        [HttpPost("AddSubCategory2")]
+        public async Task<IActionResult> SubCategory2([FromForm] SubCategoriesModel2 subcategory)
         {
             try
             {
                 string iconImagePath = string.Empty;
                 string thumbnailImagePath = string.Empty;
 
-                if (category.IconImage1 != null && category.IconImage1.Length > 0)
+                if (subcategory.IconImage1 != null && subcategory.IconImage1.Length > 0)
                 {
-                    var iconFolderPath = Path.Combine(_env.WebRootPath, "Images", "Category");
+                    var iconFolderPath = Path.Combine(_env.WebRootPath, "Images", "SubCategory2");
                     if (!Directory.Exists(iconFolderPath))
                         Directory.CreateDirectory(iconFolderPath);
 
-                    var iconFileName = Path.GetFileName(category.IconImage1.FileName);
+                    var iconFileName = Path.GetFileName(subcategory.IconImage1.FileName);
                     var iconFullPath = Path.Combine(iconFolderPath, iconFileName);
 
                     int counter = 1;
@@ -65,19 +65,19 @@ namespace MyCarBuddy.API.Controllers
 
                     using (var stream = new FileStream(iconFullPath, FileMode.Create))
                     {
-                        await category.IconImage1.CopyToAsync(stream);
+                        await subcategory.IconImage1.CopyToAsync(stream);
                     }
 
-                    iconImagePath = Path.Combine("Category", iconFileName).Replace("\\", "/");
+                    iconImagePath = Path.Combine("SubCategory2", iconFileName).Replace("\\", "/");
                 }
 
-                if (category.ThumbnailImage1 != null && category.ThumbnailImage1.Length > 0)
+                if (subcategory.ThumbnailImage1 != null && subcategory.ThumbnailImage1.Length > 0)
                 {
-                    var thumbFolderPath = Path.Combine(_env.WebRootPath, "Images", "Category");
+                    var thumbFolderPath = Path.Combine(_env.WebRootPath, "Images", "SubCategory2");
                     if (!Directory.Exists(thumbFolderPath))
                         Directory.CreateDirectory(thumbFolderPath);
 
-                    var thumbFileName = Path.GetFileName(category.ThumbnailImage1.FileName);
+                    var thumbFileName = Path.GetFileName(subcategory.ThumbnailImage1.FileName);
                     var thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
 
                     int counter = 1;
@@ -92,34 +92,36 @@ namespace MyCarBuddy.API.Controllers
 
                     using (var stream = new FileStream(thumbFullPath, FileMode.Create))
                     {
-                        await category.ThumbnailImage1.CopyToAsync(stream);
+                        await subcategory.ThumbnailImage1.CopyToAsync(stream);
                     }
 
-                    thumbnailImagePath = Path.Combine("Category", thumbFileName).Replace("\\", "/");
+                    thumbnailImagePath = Path.Combine("SubCategory2", thumbFileName).Replace("\\", "/");
                 }
 
 
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_InsertServiceCategory", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_InsertServiceSubCategory2", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CategoryName", category.CategoryName ?? "");
-                        cmd.Parameters.AddWithValue("@Description", category.Description ?? "");
+                        cmd.Parameters.AddWithValue("@SubCategoryID", subcategory.SubCategoryID);
+                        cmd.Parameters.AddWithValue("@Name", subcategory.Name);
+                        cmd.Parameters.AddWithValue("@Description", subcategory.Description ?? "");
+
                         cmd.Parameters.AddWithValue("@IconImage", iconImagePath);
                         cmd.Parameters.AddWithValue("@ThumbnailImage", thumbnailImagePath);
-                        cmd.Parameters.AddWithValue("@CreatedBy", category.CreatedBy ?? 0);
+                        cmd.Parameters.AddWithValue("@CreatedBy", subcategory.CreatedBy ?? 0);
 
                         conn.Open();
                         int rows = cmd.ExecuteNonQuery();
 
                         if (rows > 0)
                         {
-                            return Ok(new { status = true, message = "Category inserted successfully." });
+                            return Ok(new { status = true, message = " SubCategory-2 inserted successfully." });
                         }
                         else
                         {
-                            return BadRequest(new { status = false, message = "Category not inserted." });
+                            return BadRequest(new { status = false, message = "SubCategory-2 not inserted." });
                         }
                     }
                 }
@@ -133,25 +135,27 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-        #region Update category
 
-        [HttpPut("UpdateCategory")]
-        public async Task<IActionResult> UpdateCategory([FromForm] CategoryModel category)
+        #region Update sub category 2
+
+
+        [HttpPut("UpdateSubCategory2")]
+        public async Task<IActionResult> UpdateSubCategory2([FromForm] SubCategoriesModel2 subcategory2)
         {
             try
             {
-                string iconImagePath = category.IconImage ?? string.Empty;
-                string thumbnailImagePath = category.ThumbnailImage ?? string.Empty;
+                string iconImagePath = subcategory2.IconImage ?? string.Empty;
+                string thumbnailImagePath = subcategory2.ThumbnailImage ?? string.Empty;
 
 
-                if ((string.IsNullOrEmpty(iconImagePath) && (category.IconImage1 == null || category.IconImage1.Length == 0)) ||
-                 (string.IsNullOrEmpty(thumbnailImagePath) && (category.ThumbnailImage1 == null || category.ThumbnailImage1.Length == 0)))
+                if ((string.IsNullOrEmpty(iconImagePath) && (subcategory2.IconImage1 == null || subcategory2.IconImage1.Length == 0)) ||
+                 (string.IsNullOrEmpty(thumbnailImagePath) && (subcategory2.ThumbnailImage1 == null || subcategory2.ThumbnailImage1.Length == 0)))
                 {
                     using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                    using (SqlCommand cmd = new SqlCommand("sp_GetCategoryImagesByID", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetSubCategory2ImagesByID", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CategoryID", category.CategoryID);
+                        cmd.Parameters.AddWithValue("@SubSubCategoryID", subcategory2.SubSubCategoryID);
                         await conn.OpenAsync();
                         using (var reader = await cmd.ExecuteReaderAsync())
                         {
@@ -167,13 +171,13 @@ namespace MyCarBuddy.API.Controllers
                 }
 
 
-                if (category.IconImage1 != null && category.IconImage1.Length > 0)
+                if (subcategory2.IconImage1 != null && subcategory2.IconImage1.Length > 0)
                 {
-                    var iconFolderPath = Path.Combine(_env.WebRootPath, "Images", "Category");
+                    var iconFolderPath = Path.Combine(_env.WebRootPath, "Images", "SubCategory2");
                     if (!Directory.Exists(iconFolderPath))
                         Directory.CreateDirectory(iconFolderPath);
 
-                    var iconFileName = Path.GetFileName(category.IconImage1.FileName);
+                    var iconFileName = Path.GetFileName(subcategory2.IconImage1.FileName);
                     var iconFullPath = Path.Combine(iconFolderPath, iconFileName);
 
                     int counter = 1;
@@ -188,19 +192,19 @@ namespace MyCarBuddy.API.Controllers
 
                     using (var stream = new FileStream(iconFullPath, FileMode.Create))
                     {
-                        await category.IconImage1.CopyToAsync(stream);
+                        await subcategory2.IconImage1.CopyToAsync(stream);
                     }
 
-                    iconImagePath = Path.Combine("Images", "Category", iconFileName).Replace("\\", "/");
+                    iconImagePath = Path.Combine("Images", "SubCategory2", iconFileName).Replace("\\", "/");
                 }
 
-                if (category.ThumbnailImage1 != null && category.ThumbnailImage1.Length > 0)
+                if (subcategory2.ThumbnailImage1 != null && subcategory2.ThumbnailImage1.Length > 0)
                 {
-                    var thumbFolderPath = Path.Combine(_env.WebRootPath, "Images", "Category");
+                    var thumbFolderPath = Path.Combine(_env.WebRootPath, "Images", "SubCategory2");
                     if (!Directory.Exists(thumbFolderPath))
                         Directory.CreateDirectory(thumbFolderPath);
 
-                    var thumbFileName = Path.GetFileName(category.ThumbnailImage1.FileName);
+                    var thumbFileName = Path.GetFileName(subcategory2.ThumbnailImage1.FileName);
                     var thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
 
                     int counter = 1;
@@ -215,32 +219,35 @@ namespace MyCarBuddy.API.Controllers
 
                     using (var stream = new FileStream(thumbFullPath, FileMode.Create))
                     {
-                        await category.ThumbnailImage1.CopyToAsync(stream);
+                        await subcategory2.ThumbnailImage1.CopyToAsync(stream);
                     }
 
-                    thumbnailImagePath = Path.Combine("Images", "Category", thumbFileName).Replace("\\", "/");
+                    thumbnailImagePath = Path.Combine("Images", "SubCategory2", thumbFileName).Replace("\\", "/");
                 }
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_UpdateServiceCategory", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateServiceSubCategories2", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CategoryID", category.CategoryID);
-                        cmd.Parameters.AddWithValue("@CategoryName", category.CategoryName);
-                        cmd.Parameters.AddWithValue("@Description", category.Description);
-                        cmd.Parameters.AddWithValue("@ModifiedBy", category.ModifiedBy);
+                        cmd.Parameters.AddWithValue("@SubSubCategoryID", subcategory2.SubSubCategoryID);
+                        cmd.Parameters.AddWithValue("@SubCategoryID", subcategory2.SubCategoryID);
+                        cmd.Parameters.AddWithValue("@Name", subcategory2.Name);
+                        cmd.Parameters.AddWithValue("@Description", subcategory2.Description);
+
+
                         cmd.Parameters.AddWithValue("@IconImage", iconImagePath);
                         cmd.Parameters.AddWithValue("@ThumbnailImage", thumbnailImagePath);
+                        cmd.Parameters.AddWithValue("@ModifiedBy", subcategory2.ModifiedBy);
                         conn.Open();
                         int rows = cmd.ExecuteNonQuery();
 
                         if (rows > 0)
                         {
-                            return Ok(new { status = true, message = "Category updated successfully." });
+                            return Ok(new { status = true, message = " Sub Category-2 updated successfully." });
                         }
                         else
                         {
-                            return BadRequest(new { status = false, message = "Category not updated." });
+                            return BadRequest(new { status = false, message = "Sub Category-2 not updated." });
                         }
                     }
                 }
@@ -254,23 +261,20 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-
         #endregion
 
-
-
-        #region GetListCategory
+        #region GetListSubCategory2
 
         [HttpGet]
 
-        public IActionResult GetListCategory()
+        public IActionResult GetListSubCategory2()
         {
             try
             {
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_GetListAllCategories", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListServiceSubCategories2", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         conn.Open();
@@ -304,23 +308,22 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
+        #region SubCategory1ById
 
-        #region CategoryById
 
+        [HttpGet("subcategoryid2")]
 
-        [HttpGet("categoryid")]
-
-        public IActionResult GetCategoryById(int categoryid)
+        public IActionResult GetSubCategory1ById(int subcategoryid2)
         {
             try
             {
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_GetListAllCategoriesByID", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListServiceSubCategories2ByID", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CategoryID", categoryid);
+                        cmd.Parameters.AddWithValue("@SubSubCategoryID", subcategoryid2);
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -331,7 +334,7 @@ namespace MyCarBuddy.API.Controllers
                 }
                 if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "Category not found" });
+                    return NotFound(new { message = "Sub Category-2 not found.." });
                 }
                 var Data = new List<Dictionary<string, object>>();
                 foreach (DataRow row in dt.Rows)
@@ -348,7 +351,7 @@ namespace MyCarBuddy.API.Controllers
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the Categories.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the Sub Categories-2.", error = ex.Message });
 
             }
 
@@ -356,20 +359,20 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-
         #region DeleteCategory
-        [HttpDelete("categoryid")]
 
-        public IActionResult DeleteCategory(int categoryid)
+        [HttpDelete("subcategoryid2")]
+
+        public IActionResult DeleteSubCategory1(int subcategoryid2)
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_DeleteServiceCategory", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_DeleteServiceSubCategories2ByID", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CategoryID", categoryid);
+                        cmd.Parameters.AddWithValue("@SubSubCategoryID", subcategoryid2);
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
