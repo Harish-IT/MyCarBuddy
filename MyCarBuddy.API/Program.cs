@@ -30,15 +30,18 @@ else
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Add CORS policy for React app
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+            policy.WithOrigins(
+                "http://localhost:5173",
+                "https://mycarbuddy.glansadesigns.com"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+            // .AllowCredentials(); // Uncomment if needed
         });
 });
 
