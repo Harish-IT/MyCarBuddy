@@ -38,6 +38,15 @@ namespace MyCarBuddy.API.Controllers
 
         #region Insert Vehicle Model
 
+
+        private string GetRandomAlphanumericString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
         [HttpPost("InsertVehicleModel")]
         public async Task<IActionResult> InsertVehicleModel([FromForm] VehicleModelsClass vehiclemodelclass)
         {
@@ -58,14 +67,27 @@ namespace MyCarBuddy.API.Controllers
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 
-                    var originalFileName = Path.GetFileName(vehiclemodelclass.VehicleImages1.FileName);
-                    filePath = Path.Combine(vehicleModelFolder, originalFileName);
-                    vehiclemodelimage = $"/VehicleModel/{originalFileName}";
+                    var originalFileName = Path.GetFileNameWithoutExtension(vehiclemodelclass.VehicleImages1.FileName);
+                    var fileExt = Path.GetExtension(vehiclemodelclass.VehicleImages1.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                     filePath = Path.Combine(vehicleModelFolder, uniqueFileName);
+
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
+                    {
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        filePath = Path.Combine(vehicleModelFolder, uniqueFileName);
+                        counter++;
+                    }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await vehiclemodelclass.VehicleImages1.CopyToAsync(stream);
                     }
+
+                    vehiclemodelimage = $"/VehicleModel/{uniqueFileName}";
                 }
 
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
@@ -79,6 +101,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ModelName", vehiclemodelclass.ModelName);
                         cmd.Parameters.AddWithValue("@FuelTypeID", vehiclemodelclass.FuelTypeID);
                         cmd.Parameters.AddWithValue("@VehicleImage", (object)vehiclemodelimage ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@IsActive", vehiclemodelclass.IsActive);
                         cmd.Parameters.AddWithValue("@CreatedBy", vehiclemodelclass.CreatedBy);
 
                         object resultObj = await cmd.ExecuteScalarAsync();
@@ -133,8 +156,9 @@ namespace MyCarBuddy.API.Controllers
 
             try
             {
+               
                 // Step 1: Fetch old image if not uploading new one
-                if (string.IsNullOrEmpty(vehiclemodelclass.VehicleImage) && (vehiclemodelclass.VehicleImages1 == null || vehiclemodelclass.VehicleImages1.Length == 0))
+                if (string.IsNullOrEmpty(vehiclemodelimage) && (vehiclemodelclass.VehicleImages1 == null || vehiclemodelclass.VehicleImages1.Length == 0))
                 {
                     using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                     using (SqlCommand cmd = new SqlCommand("sp_GetVehicleModelImageByID", conn))
@@ -153,24 +177,35 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                // Step 2: Handle new image upload
+                // Step 2: Handle new image upload (always save with unique name)
                 if (vehiclemodelclass.VehicleImages1 != null && vehiclemodelclass.VehicleImages1.Length > 0)
                 {
                     var vehicleModelFolder = Path.Combine(_env.WebRootPath, "Images", "VehicleModel");
                     if (!Directory.Exists(vehicleModelFolder))
                         Directory.CreateDirectory(vehicleModelFolder);
 
-                    var originalFileName = Path.GetFileName(vehiclemodelclass.VehicleImages1.FileName);
-                    filePath = Path.Combine(vehicleModelFolder, originalFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(vehiclemodelclass.VehicleImages1.FileName);
+                    var fileExt = Path.GetExtension(vehiclemodelclass.VehicleImages1.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                     filePath = Path.Combine(vehicleModelFolder, uniqueFileName);
 
-                    vehiclemodelimage = $"/VehicleModel/{originalFileName}";
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
+                    {
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        filePath = Path.Combine(vehicleModelFolder, uniqueFileName);
+                        counter++;
+                    }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await vehiclemodelclass.VehicleImages1.CopyToAsync(stream);
                     }
-                }
 
+                    vehiclemodelimage = $"/VehicleModel/{uniqueFileName}";
+                }
                 // Step 3: Update vehicle model
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {

@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MyCarBuddy.API.Controllers
@@ -36,6 +37,15 @@ namespace MyCarBuddy.API.Controllers
 
         #region Insert Category
 
+
+        private string GetRandomAlphanumericString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
         [HttpPost("AddCategory")]
         public async Task<IActionResult> Category([FromForm] CategoryModel category)
         {
@@ -50,8 +60,16 @@ namespace MyCarBuddy.API.Controllers
                     if (!Directory.Exists(iconFolderPath))
                         Directory.CreateDirectory(iconFolderPath);
 
-                    var iconFileName = Path.GetFileName(category.IconImage1.FileName);
+                    //var iconFileName = Path.GetFileName(category.IconImage1.FileName);
+                    //var iconFullPath = Path.Combine(iconFolderPath, iconFileName);
+
+
+                    var originalIconFileName = Path.GetFileNameWithoutExtension(category.IconImage1.FileName);
+                    var iconFileExt = Path.GetExtension(category.IconImage1.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character alphanumeric
+                    var iconFileName = $"{originalIconFileName}_{randomString}{iconFileExt}";
                     var iconFullPath = Path.Combine(iconFolderPath, iconFileName);
+
 
                     int counter = 1;
                     while (System.IO.File.Exists(iconFullPath))
@@ -77,7 +95,14 @@ namespace MyCarBuddy.API.Controllers
                     if (!Directory.Exists(thumbFolderPath))
                         Directory.CreateDirectory(thumbFolderPath);
 
-                    var thumbFileName = Path.GetFileName(category.ThumbnailImage1.FileName);
+                    //var thumbFileName = Path.GetFileName(category.ThumbnailImage1.FileName);
+                    //var thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
+
+
+                    var originalThumbFileName = Path.GetFileNameWithoutExtension(category.ThumbnailImage1.FileName);
+                    var thumbFileExt = Path.GetExtension(category.ThumbnailImage1.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character alphanumeric
+                    var thumbFileName = $"{originalThumbFileName}_{randomString}{thumbFileExt}";
                     var thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
 
                     int counter = 1;
@@ -106,6 +131,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@CategoryName", category.CategoryName ?? "");
                         cmd.Parameters.AddWithValue("@Description", category.Description ?? "");
+                        cmd.Parameters.AddWithValue("@IsActive", category.IsActive);
                         cmd.Parameters.AddWithValue("@IconImage", iconImagePath);
                         cmd.Parameters.AddWithValue("@ThumbnailImage", thumbnailImagePath);
                         cmd.Parameters.AddWithValue("@CreatedBy", category.CreatedBy ?? 0);
@@ -143,9 +169,9 @@ namespace MyCarBuddy.API.Controllers
                 string iconImagePath = category.IconImage ?? string.Empty;
                 string thumbnailImagePath = category.ThumbnailImage ?? string.Empty;
 
-
+                // Retrieve from DB if missing
                 if ((string.IsNullOrEmpty(iconImagePath) && (category.IconImage1 == null || category.IconImage1.Length == 0)) ||
-                 (string.IsNullOrEmpty(thumbnailImagePath) && (category.ThumbnailImage1 == null || category.ThumbnailImage1.Length == 0)))
+                    (string.IsNullOrEmpty(thumbnailImagePath) && (category.ThumbnailImage1 == null || category.ThumbnailImage1.Length == 0)))
                 {
                     using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                     using (SqlCommand cmd = new SqlCommand("sp_GetCategoryImagesByID", conn))
@@ -166,23 +192,25 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-
+                // Handle IconImage1 upload
                 if (category.IconImage1 != null && category.IconImage1.Length > 0)
                 {
                     var iconFolderPath = Path.Combine(_env.WebRootPath, "Images", "Category");
                     if (!Directory.Exists(iconFolderPath))
                         Directory.CreateDirectory(iconFolderPath);
 
-                    var iconFileName = Path.GetFileName(category.IconImage1.FileName);
-                    var iconFullPath = Path.Combine(iconFolderPath, iconFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(category.IconImage1.FileName);
+                    var fileExt = Path.GetExtension(category.IconImage1.FileName);
+                    var randomString = GetRandomAlphanumericString(8);
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var iconFullPath = Path.Combine(iconFolderPath, uniqueFileName);
 
+                    // Optional: Extra collision check (very rare with random string)
                     int counter = 1;
                     while (System.IO.File.Exists(iconFullPath))
                     {
-                        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(iconFileName);
-                        var ext = Path.GetExtension(iconFileName);
-                        iconFileName = $"{fileNameWithoutExt}_{counter}{ext}";
-                        iconFullPath = Path.Combine(iconFolderPath, iconFileName);
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        iconFullPath = Path.Combine(iconFolderPath, uniqueFileName);
                         counter++;
                     }
 
@@ -191,25 +219,28 @@ namespace MyCarBuddy.API.Controllers
                         await category.IconImage1.CopyToAsync(stream);
                     }
 
-                    iconImagePath = Path.Combine("Category", iconFileName).Replace("\\", "/");
+                    iconImagePath = Path.Combine("Category", uniqueFileName).Replace("\\", "/");
                 }
 
+                // Handle ThumbnailImage1 upload
                 if (category.ThumbnailImage1 != null && category.ThumbnailImage1.Length > 0)
                 {
                     var thumbFolderPath = Path.Combine(_env.WebRootPath, "Images", "Category");
                     if (!Directory.Exists(thumbFolderPath))
                         Directory.CreateDirectory(thumbFolderPath);
 
-                    var thumbFileName = Path.GetFileName(category.ThumbnailImage1.FileName);
-                    var thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(category.ThumbnailImage1.FileName);
+                    var fileExt = Path.GetExtension(category.ThumbnailImage1.FileName);
+                    var randomString = GetRandomAlphanumericString(8);
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var thumbFullPath = Path.Combine(thumbFolderPath, uniqueFileName);
 
+                    // Optional: Extra collision check (very rare with random string)
                     int counter = 1;
                     while (System.IO.File.Exists(thumbFullPath))
                     {
-                        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(thumbFileName);
-                        var ext = Path.GetExtension(thumbFileName);
-                        thumbFileName = $"{fileNameWithoutExt}_{counter}{ext}";
-                        thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        thumbFullPath = Path.Combine(thumbFolderPath, uniqueFileName);
                         counter++;
                     }
 
@@ -218,8 +249,10 @@ namespace MyCarBuddy.API.Controllers
                         await category.ThumbnailImage1.CopyToAsync(stream);
                     }
 
-                    thumbnailImagePath = Path.Combine("Category", thumbFileName).Replace("\\", "/");
+                    thumbnailImagePath = Path.Combine("Category", uniqueFileName).Replace("\\", "/");
                 }
+
+
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_UpdateServiceCategory", conn))

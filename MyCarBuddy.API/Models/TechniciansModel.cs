@@ -70,6 +70,8 @@ namespace MyCarBuddy.API.Models
         [BindNever]
         public int Status { get; set; }
 
+        public int? DistributorID { get; set; }
+
         // --- Document Upload Handling ---
 
         [NotMapped]

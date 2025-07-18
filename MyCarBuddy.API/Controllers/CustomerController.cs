@@ -35,6 +35,16 @@ namespace MyCarBuddy.API.Controllers
 
         #region InsertCustomer
 
+
+        private string GetRandomAlphanumericString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+
         [HttpPost("InsertCustomer")]
 
         public async Task<IActionResult> InsertCustomer([FromForm] CustomerModel model)
@@ -54,22 +64,64 @@ namespace MyCarBuddy.API.Controllers
                     return BadRequest($"The following fields are required: {string.Join(", ", missingFields)}");
                 }
 
+                //string profileImagePath = null;
+                //if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
+                //{
+                //   // var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images", "Customer");
+                //    var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Customer");
+                //    if (!Directory.Exists(imagesFolder))
+                //        Directory.CreateDirectory(imagesFolder);
+
+                //    //var originalFileName = Path.GetFileName(model.ProfileImageFile.FileName);
+                //    //var filePath = Path.Combine(imagesFolder, originalFileName);
+
+
+
+
+                //    var originalFileName = Path.GetFileNameWithoutExtension(model.ProfileImageFile.FileName);
+                //    var fileExt = Path.GetExtension(model.ProfileImageFile.FileName);
+                //    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                //    var uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                //    var filePath = Path.Combine(imagesFolder, uniqueFileName);
+
+
+
+                //    if (System.IO.File.Exists(filePath))
+                //    {
+                //         uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                //        filePath = Path.Combine(imagesFolder, uniqueFileName);
+                //        originalFileName = uniqueFileName;
+                //    }
+
+                //    using (var stream = new FileStream(filePath, FileMode.Create))
+                //    {
+                //        await model.ProfileImageFile.CopyToAsync(stream);
+                //    }
+
+                //    profileImagePath = Path.Combine("Customer", originalFileName).Replace("\\", "/");
+                //}
+
+
                 string profileImagePath = null;
                 if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
                 {
-                   // var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images", "Customer");
                     var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Customer");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
-                    var originalFileName = Path.GetFileName(model.ProfileImageFile.FileName);
-                    var filePath = Path.Combine(imagesFolder, originalFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(model.ProfileImageFile.FileName);
+                    var fileExt = Path.GetExtension(model.ProfileImageFile.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(imagesFolder, uniqueFileName);
 
-                    if (System.IO.File.Exists(filePath))
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
                     {
-                        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
                         filePath = Path.Combine(imagesFolder, uniqueFileName);
-                        originalFileName = uniqueFileName;
+                        counter++;
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
@@ -77,8 +129,10 @@ namespace MyCarBuddy.API.Controllers
                         await model.ProfileImageFile.CopyToAsync(stream);
                     }
 
-                    profileImagePath = Path.Combine("Customer", originalFileName).Replace("\\", "/");
+                    profileImagePath = Path.Combine("Customer", uniqueFileName).Replace("\\", "/");
                 }
+
+
                 int newCustId;
                 using (SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {

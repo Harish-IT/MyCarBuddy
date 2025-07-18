@@ -34,9 +34,19 @@ namespace MyCarBuddy.API.Controllers
             _env=env;
         }
 
-      
+
 
         #region InsertTechnicians
+
+        private string GetRandomAlphanumericString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+
         [HttpPost]
         [Route("InsertTechnicians")]
         public async Task<IActionResult> InsertTechnicians([FromForm] TechniciansModel technicians)
@@ -61,22 +71,34 @@ namespace MyCarBuddy.API.Controllers
                     });
                 }
 
-                // Step 2: Save profile image (only if validation passes)
                 string imagePath = null;
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
-                    var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
-                    //var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images","Technicians");
                     var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Technicians");
                     if (!Directory.Exists(imagesFolder))
                         Directory.CreateDirectory(imagesFolder);
 
-                    var filePath = Path.Combine(imagesFolder, fileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(technicians.ProfileImageFile.FileName);
+                    var fileExt = Path.GetExtension(technicians.ProfileImageFile.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(imagesFolder, uniqueFileName);
+
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
+                    {
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        filePath = Path.Combine(imagesFolder, uniqueFileName);
+                        counter++;
+                    }
+
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await technicians.ProfileImageFile.CopyToAsync(stream);
                     }
-                    imagePath = Path.Combine("Technicians", fileName).Replace("\\", "/");
+
+                    imagePath = Path.Combine("Technicians", uniqueFileName).Replace("\\", "/");
                 }
 
                 technicians.ProfileImage = imagePath;
@@ -104,6 +126,8 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@Pincode", technicians.Pincode);
                     cmd.Parameters.AddWithValue("@ProfileImage", (object)technicians.ProfileImage ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@CredatedBy", technicians.CreatedBy);
+                    cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
+                    cmd.Parameters.AddWithValue("@DistributorID", technicians.DistributorID);
 
                     var result = await cmd.ExecuteScalarAsync();
                     techId = Convert.ToInt32(result);
@@ -116,17 +140,30 @@ namespace MyCarBuddy.API.Controllers
                     var docMeta = technicians.Documents[i];
 
                     // Save document file
-                    var docFileName = Path.GetFileName(file.FileName);
                     var documentsFolder = Path.Combine(_env.WebRootPath, "Documents");
                     if (!Directory.Exists(documentsFolder))
                         Directory.CreateDirectory(documentsFolder);
 
-                    var docFilePath = Path.Combine(documentsFolder, docFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
+                    var fileExt = Path.GetExtension(file.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var docFilePath = Path.Combine(documentsFolder, uniqueFileName);
+
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(docFilePath))
+                    {
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        docFilePath = Path.Combine(documentsFolder, uniqueFileName);
+                        counter++;
+                    }
+
                     using (var stream = new FileStream(docFilePath, FileMode.Create))
                     {
                         await file.CopyToAsync(stream);
                     }
-                    var documentUrl = Path.Combine("Documents", docFileName).Replace("\\", "/");
+                    var documentUrl = Path.Combine("Documents", uniqueFileName).Replace("\\", "/");
 
                     // Insert document record
                     using (var docCmd = new SqlCommand("sp_InsertTechnicianDocument", conn, transaction))
@@ -190,7 +227,6 @@ namespace MyCarBuddy.API.Controllers
 
                 if (!techExists)
                     return NotFound(new { status = false, message = "Technician not found." });
-
                 // Fetch existing profile image if not uploading new one
                 string imagePath = technicians.ProfileImage;
                 if (string.IsNullOrEmpty(imagePath) && (technicians.ProfileImageFile == null || technicians.ProfileImageFile.Length == 0))
@@ -212,18 +248,33 @@ namespace MyCarBuddy.API.Controllers
                 // Upload profile image if new file is provided
                 if (technicians.ProfileImageFile != null && technicians.ProfileImageFile.Length > 0)
                 {
-                    var fileName = Path.GetFileName(technicians.ProfileImageFile.FileName);
                     var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Technicians");
                     Directory.CreateDirectory(imagesFolder);
 
-                    var filePath = Path.Combine(imagesFolder, fileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(technicians.ProfileImageFile.FileName);
+                    var fileExt = Path.GetExtension(technicians.ProfileImageFile.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(imagesFolder, uniqueFileName);
+
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
+                    {
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                        filePath = Path.Combine(imagesFolder, uniqueFileName);
+                        counter++;
+                    }
+
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await technicians.ProfileImageFile.CopyToAsync(stream);
                     }
 
-                    imagePath = Path.Combine("Technicians", fileName).Replace("\\", "/");
+                    imagePath = Path.Combine("Technicians", uniqueFileName).Replace("\\", "/");
                 }
+
+                technicians.ProfileImage = imagePath;
 
                 // Update technician info (without documents)
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
@@ -248,6 +299,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ModifedBy", (object?)technicians.ModifiedBy ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
                         cmd.Parameters.AddWithValue("@Status", technicians.Status);
+                        cmd.Parameters.AddWithValue("@DistributorID", technicians.DistributorID);
 
                         // Document fields as NULL
                         cmd.Parameters.AddWithValue("@DocID", DBNull.Value);
@@ -270,15 +322,13 @@ namespace MyCarBuddy.API.Controllers
                         var file = technicians.DocumentFiles[i];
                         var docMeta = technicians.Documents[i];
 
-                        var docFileName = Path.GetFileName(file.FileName);
-                        var documentUrl = Path.Combine("Documents", docFileName).Replace("\\", "/");
-
                         // Check if document already exists
                         bool documentExists = false;
                         using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                         {
-                            using (SqlCommand checkCmd = new SqlCommand("SELECT COUNT(1) FROM TechnicianDocuments WHERE TechID = @TechID AND DocuTypeID = @DocuTypeID", conn))
+                            using (SqlCommand checkCmd = new SqlCommand("sp_GetTechnicianDocumentCount", conn))
                             {
+                                checkCmd.CommandType = CommandType.StoredProcedure;
                                 checkCmd.Parameters.AddWithValue("@TechID", technicians.TechID);
                                 checkCmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID ?? 0);
                                 await conn.OpenAsync();
@@ -289,13 +339,31 @@ namespace MyCarBuddy.API.Controllers
                         if (documentExists)
                             continue;
 
+                        // Save document file with unique name
                         var documentsFolder = Path.Combine(_env.WebRootPath, "Documents");
                         Directory.CreateDirectory(documentsFolder);
-                        var docFilePath = Path.Combine(documentsFolder, docFileName);
+
+                        var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
+                        var fileExt = Path.GetExtension(file.FileName);
+                        var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                        string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                        var docFilePath = Path.Combine(documentsFolder, uniqueFileName);
+
+                        // Optional: Extra collision check (very rare with random string)
+                        int counter = 1;
+                        while (System.IO.File.Exists(docFilePath))
+                        {
+                            uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
+                            docFilePath = Path.Combine(documentsFolder, uniqueFileName);
+                            counter++;
+                        }
+
                         using (var stream = new FileStream(docFilePath, FileMode.Create))
                         {
                             await file.CopyToAsync(stream);
                         }
+
+                        var documentUrl = Path.Combine("Documents", uniqueFileName).Replace("\\", "/");
 
                         using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                         {
@@ -319,6 +387,7 @@ namespace MyCarBuddy.API.Controllers
                                 cmd.Parameters.AddWithValue("@ModifedBy", DBNull.Value);
                                 cmd.Parameters.AddWithValue("@IsActive", DBNull.Value);
                                 cmd.Parameters.AddWithValue("@Status", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@DistributorID", DBNull.Value);
 
                                 cmd.Parameters.AddWithValue("@DocID", docMeta?.DocID ?? 0);
                                 cmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID != null ? docMeta.DocTypeID : (object)DBNull.Value);

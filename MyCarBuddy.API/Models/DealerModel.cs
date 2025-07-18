@@ -47,6 +47,6 @@ namespace MyCarBuddy.API.Models
         public DateTime CreatedDate { get; set; }
 
         [Required(ErrorMessage = "IsActive is required.")]
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

@@ -33,6 +33,16 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+
+        private string GetRandomAlphanumericString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+
         [HttpPost("InsertVehicleBrand")]
 
         public async Task<IActionResult> InsertVehicleBrand([FromForm] VehicleBrandsModel vehiclebrands)
@@ -49,36 +59,36 @@ namespace MyCarBuddy.API.Controllers
                     return BadRequest(new { status = false, message = $"The following fields are required: {string.Join(", ", missingFields)}" });
                 }
 
-
-                // Handle BrandLogo upload (save with original name, ensure uniqueness)
                 string brandLogoFileName = null;
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
-                    // Set the subfolder path
                     var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "BrandLogo");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
-                    var originalFileName = Path.GetFileName(vehiclebrands.BrandLogoImage.FileName);
-                    var filePath = Path.Combine(brandLogoFolder, originalFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(vehiclebrands.BrandLogoImage.FileName);
+                    var fileExt = Path.GetExtension(vehiclebrands.BrandLogoImage.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(brandLogoFolder, uniqueFileName);
 
-                    // Ensure uniqueness
-                    if (System.IO.File.Exists(filePath))
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
                     {
-                        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
                         filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                        brandLogoFileName = $"/BrandLogo/{uniqueFileName}";
-                    }
-                    else
-                    {
-                        brandLogoFileName = $"/BrandLogo/{originalFileName}";
+                        counter++;
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await vehiclebrands.BrandLogoImage.CopyToAsync(stream);
                     }
+
+                    brandLogoFileName = $"/BrandLogo/{uniqueFileName}";
                 }
+
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_InsertVehicleBrands", conn))
@@ -86,6 +96,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@BrandName", vehiclebrands.BrandName);
                         cmd.Parameters.AddWithValue("@BrandLogo", (object?)brandLogoFileName ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@IsActive", vehiclebrands.IsActive);
                         cmd.Parameters.AddWithValue("@CreatedBy", vehiclebrands.CreatedBy);
 
                         await conn.OpenAsync();
@@ -155,31 +166,34 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                // Handle new image upload
+                // Handle new image upload (always save with unique name)
                 if (vehiclebrands.BrandLogoImage != null && vehiclebrands.BrandLogoImage.Length > 0)
                 {
                     var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "BrandLogo");
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
-                    var originalFileName = Path.GetFileName(vehiclebrands.BrandLogoImage.FileName);
-                    var filePath = Path.Combine(brandLogoFolder, originalFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(vehiclebrands.BrandLogoImage.FileName);
+                    var fileExt = Path.GetExtension(vehiclebrands.BrandLogoImage.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(brandLogoFolder, uniqueFileName);
 
-                    if (System.IO.File.Exists(filePath))
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
                     {
-                        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
                         filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                        brandLogoFileName = $"/BrandLogo/{uniqueFileName}";
-                    }
-                    else
-                    {
-                        brandLogoFileName = $"/BrandLogo/{originalFileName}";
+                        counter++;
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await vehiclebrands.BrandLogoImage.CopyToAsync(stream);
                     }
+
+                    brandLogoFileName = $"/BrandLogo/{uniqueFileName}";
                 }
 
                 // Update to database

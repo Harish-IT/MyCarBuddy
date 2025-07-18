@@ -34,9 +34,19 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+        private string GetRandomAlphanumericString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+
 
 
         [HttpPost("InsertFuelType")]
+
         public async Task<IActionResult> InsertFuelType([FromForm] FuelTypeModel fueltype)
         {
             try
@@ -51,36 +61,68 @@ namespace MyCarBuddy.API.Controllers
                 }
 
 
+                //string brandLogoFileName = null;
+                //if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
+                //{
+
+                //    var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
+
+                //    if (!Directory.Exists(brandLogoFolder))
+                //        Directory.CreateDirectory(brandLogoFolder);
+
+                //    var originalFileName = Path.GetFileName(fueltype.FuelImage1.FileName);
+                //    var filePath = Path.Combine(brandLogoFolder, originalFileName);
+
+                //    if (System.IO.File.Exists(filePath))
+                //    {
+                //        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                //        filePath = Path.Combine(brandLogoFolder, uniqueFileName);
+                //        //brandLogoFileName = "/FuelImages/{uniqueFileName}";
+                //        brandLogoFileName = $"FuelImages/{uniqueFileName}";
+                //    }
+                //    else
+                //    {
+                //        brandLogoFileName = $"FuelImages/{originalFileName}";
+                //    }
+
+                //    using (var stream = new FileStream(filePath, FileMode.Create))
+                //    {
+                //        await fueltype.FuelImage1.CopyToAsync(stream);
+                //    }
+                //}
+
                 string brandLogoFileName = null;
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-                    
-                    //var brandLogoFolder = Path.Combine(Directory.GetCurrentDirectory(), "Images", "FuelImages");
                     var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
 
                     if (!Directory.Exists(brandLogoFolder))
                         Directory.CreateDirectory(brandLogoFolder);
 
-                    var originalFileName = Path.GetFileName(fueltype.FuelImage1.FileName);
-                    var filePath = Path.Combine(brandLogoFolder, originalFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(fueltype.FuelImage1.FileName);
+                    var fileExt = Path.GetExtension(fueltype.FuelImage1.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(brandLogoFolder, uniqueFileName);
 
-                    if (System.IO.File.Exists(filePath))
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
                     {
-                        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
                         filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                        //brandLogoFileName = "/FuelImages/{uniqueFileName}";
-                        brandLogoFileName = $"/FuelImages/{uniqueFileName}";
-                    }
-                    else
-                    {
-                        brandLogoFileName = $"/FuelImages/{originalFileName}";
+                        counter++;
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await fueltype.FuelImage1.CopyToAsync(stream);
                     }
+
+                    // This is the path you can store in the database
+                    brandLogoFileName = $"FuelImages/{uniqueFileName}";
                 }
+
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_InsertFuelTypes", conn))
@@ -89,6 +131,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@FuelTypeName", fueltype.FuelTypeName);
                         cmd.Parameters.AddWithValue("@FuelImage", (object?)brandLogoFileName ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@CreatedBy", fueltype.CreatedBy);
+                        cmd.Parameters.AddWithValue("@IsActive", fueltype.IsActive);
 
                         await conn.OpenAsync();
                         await cmd.ExecuteNonQueryAsync();
@@ -139,7 +182,7 @@ namespace MyCarBuddy.API.Controllers
 
                 string fuelImagePath = fueltype.FuelImage;
 
-
+                // Retrieve from DB if missing and no new file uploaded
                 if ((fueltype.FuelImage1 == null || fueltype.FuelImage1.Length == 0) && string.IsNullOrEmpty(fuelImagePath))
                 {
                     using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
@@ -157,32 +200,35 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-
+                // Handle FuelImage1 upload
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
                 {
-
                     var fuelImageFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
                     if (!Directory.Exists(fuelImageFolder))
                         Directory.CreateDirectory(fuelImageFolder);
 
-                    var originalFileName = Path.GetFileName(fueltype.FuelImage1.FileName);
-                    var filePath = Path.Combine(fuelImageFolder, originalFileName);
+                    var originalFileName = Path.GetFileNameWithoutExtension(fueltype.FuelImage1.FileName);
+                    var fileExt = Path.GetExtension(fueltype.FuelImage1.FileName);
+                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
+                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    var filePath = Path.Combine(fuelImageFolder, uniqueFileName);
 
-                    if (System.IO.File.Exists(filePath))
+                    // Optional: Extra collision check (very rare with random string)
+                    int counter = 1;
+                    while (System.IO.File.Exists(filePath))
                     {
-                        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
+                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
                         filePath = Path.Combine(fuelImageFolder, uniqueFileName);
-                        fuelImagePath = $"/FuelImages/{uniqueFileName}";
-                    }
-                    else
-                    {
-                        fuelImagePath = $"/FuelImages/{originalFileName}";
+                        counter++;
                     }
 
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         await fueltype.FuelImage1.CopyToAsync(stream);
                     }
+
+                    // This is the path you can store in the database
+                    fuelImagePath = $"FuelImages/{uniqueFileName}";
                 }
 
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))

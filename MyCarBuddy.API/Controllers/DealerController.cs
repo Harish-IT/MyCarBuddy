@@ -31,6 +31,7 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #region InsertDealer
+
         [HttpPost]
 
         public IActionResult InsertDealer(DealerModel dealer)
@@ -51,6 +52,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CityID", dealer.CityID);
                         cmd.Parameters.AddWithValue("@Address", dealer.Address);
                         cmd.Parameters.AddWithValue("@GSTNumber", dealer.GSTNumber);
+                        cmd.Parameters.AddWithValue("@IsActive", dealer.IsActive);
 
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())

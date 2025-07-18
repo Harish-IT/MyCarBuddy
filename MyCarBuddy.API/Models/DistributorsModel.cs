@@ -41,6 +41,6 @@ public class DistributorsModel
 
     [BindNever]
     public DateTime CreatedDate { get; set; }
-    [BindNever]
-    public bool IsActive { get; set; }
+    
+    public bool? IsActive { get; set; }
 }
