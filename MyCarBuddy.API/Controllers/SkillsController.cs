@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -12,73 +13,59 @@ using System.Data;
 using System.Data.Entity.Infrastructure;
 using System.IO;
 
-
 namespace MyCarBuddy.API.Controllers
 {
     //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class DealerController : ControllerBase
+    public class SkillsController : ControllerBase
     {
 
         private readonly IConfiguration _configuration;
-        private readonly ILogger<DealerController> _logger;
+        private readonly ILogger<SkillsController> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public DealerController(IConfiguration configuration, ILogger<DealerController> logger)
+
+        public SkillsController(IConfiguration configuration, ILogger<SkillsController> logger, IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
+            _env = env;
         }
 
-        #region InsertDealer
+        #region InsertSkills
 
         [HttpPost]
 
-        public IActionResult InsertDealer(DealerModel dealer)
+        public IActionResult InsertSkills(SkillsModel skill)
         {
             try
             {
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_InsertDealers",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_InsertSkill", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@DistributorID", dealer.DistributorID);
-                        cmd.Parameters.AddWithValue("@FullName", dealer.FullName);
-                        cmd.Parameters.AddWithValue("@PhoneNumber", dealer.PhoneNumber);
-                        cmd.Parameters.AddWithValue("@Email", dealer.Email);
-                        cmd.Parameters.AddWithValue("@PasswordHash", dealer.PasswordHash);
-                        cmd.Parameters.AddWithValue("@StateID", dealer.StateID);
-                        cmd.Parameters.AddWithValue("@CityID", dealer.CityID);
-                        cmd.Parameters.AddWithValue("@Address", dealer.Address);
-                        cmd.Parameters.AddWithValue("@GSTNumber", dealer.GSTNumber);
-                        cmd.Parameters.AddWithValue("@IsActive", dealer.IsActive);
-
+                        cmd.Parameters.AddWithValue("@SkillName", skill.SkillName);
+                        cmd.Parameters.AddWithValue("@Description", skill.Description);
+                        cmd.Parameters.AddWithValue("@CreatedBy", skill.CreatedBy);
+                        cmd.Parameters.AddWithValue("@IsActive", skill.IsActive);
+                        
                         conn.Open();
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                int resultCode = Convert.ToInt32(reader["ResultCode"]);
-                                string message = reader["Message"].ToString();
+                        int rows = cmd.ExecuteNonQuery();
 
-                                if (resultCode == 1)
-                                {
-                                    int dealerId = Convert.ToInt32(reader["DealerID"]);
-                                    return Ok(new { dealerId, message });
-                                }
-                                else
-                                {
-                                    return BadRequest(new { message });
-                                }
-                            }
+                        if (rows > 0)
+                        {
+                            return Ok(new { status = true, message = "Skill inserted successfully." });
                         }
-                        conn.Close();
+                        else
+                        {
+                            return BadRequest(new { status = false, message = "Insertion failed." });
+                        }
                     }
                 }
-                return StatusCode(500, new { message = "Unknown error occurred." });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while inserting the record.", error = ex.Message });
@@ -88,50 +75,39 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-        #region UpdateDealer
+        #region UpdateSkill
+
         [HttpPut]
-        public IActionResult UpdateDealer(DealerModel dealer)
+        public IActionResult UpdateSkill(SkillsModel skill)
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_UpdateDealers", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateSkill", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@DealerID", dealer.DealerID);
-                        cmd.Parameters.AddWithValue("@DistributorID", dealer.DistributorID);
-                        cmd.Parameters.AddWithValue("@FullName", dealer.FullName);
-                        cmd.Parameters.AddWithValue("@PhoneNumber", dealer.PhoneNumber);
-                        cmd.Parameters.AddWithValue("@Email", dealer.Email);
-                        cmd.Parameters.AddWithValue("@PasswordHash", dealer.PasswordHash);
-                        cmd.Parameters.AddWithValue("@StateID", dealer.StateID);
-                        cmd.Parameters.AddWithValue("@CityID", dealer.CityID);
-                        cmd.Parameters.AddWithValue("@Address", dealer.Address);
-                        cmd.Parameters.AddWithValue("@GSTNumber", dealer.GSTNumber);
-                        cmd.Parameters.AddWithValue("@CreatedDate", dealer.CreatedDate);
-                        cmd.Parameters.AddWithValue("@IsActive", dealer.IsActive);
+                        cmd.Parameters.AddWithValue("@SkillID", skill.SkillID);
+                        cmd.Parameters.AddWithValue("@SkillName", skill.SkillName);
+                        cmd.Parameters.AddWithValue("@Description", skill.Description);
+                        cmd.Parameters.AddWithValue("@ModifiedBy", skill.ModifiedBy);
+                        cmd.Parameters.AddWithValue("@IsActive", skill.IsActive);
+                       
+
 
                         conn.Open();
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                int resultCode = Convert.ToInt32(reader["ResultCode"]);
-                                string message = reader["Message"].ToString();
+                        int rows = cmd.ExecuteNonQuery();
 
-                                if (resultCode == 1)
-                                    return Ok(new { message });
-                                else if (resultCode < 0)
-                                    return BadRequest(new { message });
-                                else
-                                    return NotFound(new { message });
-                            }
+                        if (rows > 0)
+                        {
+                            return Ok(new { status = true, message = "Skill updated successfully." });
                         }
-                        conn.Close();
+                        else
+                        {
+                            return BadRequest(new { status = false, message = "Skill not updated." });
+                        }
                     }
                 }
-                return StatusCode(500, new { message = "Unknown error occurred." });
             }
             catch (Exception ex)
             {
@@ -142,19 +118,20 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-        #region DeleteDealer
-        [HttpDelete("dealerid")]
+        #region DeleteSkill
 
-        public IActionResult DeleteDealer(int dealerid)
+        [HttpDelete("skillid")]
+
+        public IActionResult DeleteSkill(int skillid)
         {
             try
             {
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_DeleteDealers",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_DeleteSkill", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@DealerID", dealerid);
+                        cmd.Parameters.AddWithValue("@SkillID", skillid);
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -187,18 +164,18 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-        #region GetAllDealer
+        #region GetAllSKills
 
         [HttpGet]
 
-        public IActionResult GetAllDealer()
+        public IActionResult GetAllSkills()
         {
             try
             {
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_ListDealers", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetAllSkills", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         conn.Open();
@@ -221,36 +198,36 @@ namespace MyCarBuddy.API.Controllers
                     return Ok(jsonResult);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
 
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the dealer.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the skills.", error = ex.Message });
 
             }
         }
 
         #endregion
 
-        #region GetDealerById
+        #region GetSkillById
 
-        [HttpGet("dealerid")]
+        [HttpGet("skillid")]
 
-        public IActionResult GetDealerById(int dealerid)
+        public IActionResult GetDealerById(int skillid)
         {
             try
             {
                 DataTable dt = new DataTable();
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_GetDealersByID",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetSkillByID", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@DealerID", dealerid);
+                        cmd.Parameters.AddWithValue("@SkillID", skillid);
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            dt.Load(reader); 
+                            dt.Load(reader);
                         }
                         conn.Close();
                     }
@@ -274,12 +251,13 @@ namespace MyCarBuddy.API.Controllers
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the dealer.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the skills.", error = ex.Message });
 
             }
 
         }
 
         #endregion
+
     }
 }

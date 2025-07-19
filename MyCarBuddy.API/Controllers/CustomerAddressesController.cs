@@ -191,7 +191,7 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
-        #region includeid
+        #region AddressId
 
 
         [HttpGet("addressid")]
@@ -243,7 +243,51 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
+        #region includeid
 
+        [HttpDelete("addressid")]
+
+        public IActionResult DeleteInclude(int addressid)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_DeleteCustomerAddress", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@AddressID", addressid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int resultCode = Convert.ToInt32(reader["ResultCode"]);
+                                string message = reader["Message"].ToString();
+
+                                if (resultCode == 1)
+                                    return Ok(new { message });
+                                else if (resultCode == -1)
+                                    return BadRequest(new { message });
+                                else
+                                    return NotFound(new { message });
+                            }
+                        }
+                        conn.Close();
+                    }
+                }
+                return StatusCode(500, new { message = "Unknown error occurred." });
+            }
+            catch (Exception ex)
+            {
+
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while deleting the record.", error = ex.Message });
+
+            }
+        }
+
+        #endregion
 
     }
 }
