@@ -72,6 +72,8 @@ namespace MyCarBuddy.API.Models
 
         public int? DistributorID { get; set; }
 
+        public int? SkillID { get; set; }
+
         // --- Document Upload Handling ---
 
         [NotMapped]

@@ -128,6 +128,7 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@CredatedBy", technicians.CreatedBy);
                     cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
                     cmd.Parameters.AddWithValue("@DistributorID", technicians.DistributorID);
+                    cmd.Parameters.AddWithValue("@SkillID", technicians.SkillID);
 
                     var result = await cmd.ExecuteScalarAsync();
                     techId = Convert.ToInt32(result);
@@ -300,6 +301,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
                         cmd.Parameters.AddWithValue("@Status", technicians.Status);
                         cmd.Parameters.AddWithValue("@DistributorID", technicians.DistributorID);
+                        cmd.Parameters.AddWithValue("@SkillID", technicians.SkillID);
 
                         // Document fields as NULL
                         cmd.Parameters.AddWithValue("@DocID", DBNull.Value);
@@ -388,6 +390,7 @@ namespace MyCarBuddy.API.Controllers
                                 cmd.Parameters.AddWithValue("@IsActive", DBNull.Value);
                                 cmd.Parameters.AddWithValue("@Status", DBNull.Value);
                                 cmd.Parameters.AddWithValue("@DistributorID", DBNull.Value);
+                                cmd.Parameters.AddWithValue("@SkillID", DBNull.Value);
 
                                 cmd.Parameters.AddWithValue("@DocID", docMeta?.DocID ?? 0);
                                 cmd.Parameters.AddWithValue("@DocuTypeID", docMeta?.DocTypeID != null ? docMeta.DocTypeID : (object)DBNull.Value);

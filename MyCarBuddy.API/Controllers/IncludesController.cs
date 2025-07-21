@@ -52,6 +52,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CreatedBy", include.CreatedBy);
                         cmd.Parameters.AddWithValue("@IsActive", include.IsActive);
                         cmd.Parameters.AddWithValue("@CategoryID", include.CategoryID);
+                        cmd.Parameters.AddWithValue("@SkillID", include.SkillID);
                         conn.Open();
                         int rows = cmd.ExecuteNonQuery();
 
@@ -97,10 +98,9 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@Description", include.Description);
                         cmd.Parameters.AddWithValue("@IncludePrice", include.IncludePrice);
                         cmd.Parameters.AddWithValue("@IsActive", include.IsActive);
-
-
                         cmd.Parameters.AddWithValue("@ModifiedBy", include.ModifiedBy);
                         cmd.Parameters.AddWithValue("@CategoryID", include.CategoryID);
+                        cmd.Parameters.AddWithValue("@SkillID", include.SkillID);
                        
                         conn.Open();
                         int rows = cmd.ExecuteNonQuery();
@@ -127,7 +127,7 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-        #region GetListSubCategory2
+        #region GetListIncludes
 
         [HttpGet]
 

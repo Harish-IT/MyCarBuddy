@@ -14,5 +14,7 @@
 
         public int? CategoryID { get; set; }
 
+        public int?SkillID { get;set; }
+
     }
 }
