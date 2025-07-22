@@ -6,7 +6,7 @@
         public string Password { get; set; }
 
         public string Email { get; set; }
-        public string LoginId { get; set; }
+       
     }
 
     public class CustomerLoginRequest
@@ -17,5 +17,7 @@
 
         public string DeviceToken { get; set; }
         public string DeviceId { get; set; }
+
+        public string LoginId { get; set; }
     }
 }
