@@ -137,23 +137,25 @@ namespace MyCarBuddy.API.Controllers
         [HttpPost("send-otp")]
         public async Task<IActionResult> SendOtp([FromBody] CustomerLoginRequest request)
         {
+            string loginId = request.LoginId?.Trim();
+            if (string.IsNullOrEmpty(loginId) || loginId.ToLower() == "string")
+                return BadRequest(new { Success = false, Message = "Please provide a valid Email or Phone Number." });
+
             string otp = new Random().Next(100000, 999999).ToString();
 
-            // Save OTP and contact info
-            string connectionString = _config.GetConnectionString("DefaultConnection");
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            // Save OTP in DB
+            using (SqlConnection conn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
             {
                 SqlCommand cmd = new SqlCommand("SP_SaveCustomerOTP", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@Email", string.IsNullOrEmpty(request.Email) ? DBNull.Value : request.Email);
-                cmd.Parameters.AddWithValue("@PhoneNumber", string.IsNullOrEmpty(request.PhoneNumber) ? DBNull.Value : request.PhoneNumber);
+                cmd.Parameters.AddWithValue("@LoginId", loginId);
                 cmd.Parameters.AddWithValue("@OTP", otp);
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }
 
-            // Send Email OTP
-            if (!string.IsNullOrWhiteSpace(request.Email) && request.Email.ToLower() != "string")
+            // Email or SMS based on format
+            if (loginId.Contains("@"))
             {
                 var smtpClient = new SmtpClient("smtp.gmail.com")
                 {
@@ -161,32 +163,26 @@ namespace MyCarBuddy.API.Controllers
                     Credentials = new NetworkCredential("prudhviraj.glansa@gmail.com", "ujiajcwsczeghshr"),
                     EnableSsl = true,
                 };
-                smtpClient.Send("harish@glansa.com", request.Email, "Your OTP Code", $"Your OTP is: {otp}");
+                smtpClient.Send("harish@glansa.com", loginId, "Your OTP Code", $"Your OTP is: {otp}");
             }
-
-            // Send SMS OTP
-            else if (!string.IsNullOrWhiteSpace(request.PhoneNumber) && request.PhoneNumber.ToLower() != "string")
+            else
             {
                 string apiKey = "00aaa0bb-62dc-11f0-a562-0200cd936042";
                 string templateName = "MycarbuddySMS";
                 string senderId = "GLANSA";
 
-                string var1 = request.PhoneNumber.Trim();
-                if (var1.Length == 10)
-                    var1 = "91" + var1;
-                else if (var1.Length != 12 || !var1.StartsWith("91"))
+                if (loginId.Length == 10)
+                    loginId = "91" + loginId;
+                else if (loginId.Length != 12 || !loginId.StartsWith("91"))
                     return BadRequest("Invalid phone number");
 
-                string var2 = otp;
-
-                // ✅ Use R1 endpoint
                 string apiUrl = $"https://2factor.in/API/R1?module=TRANS_SMS" +
                                 $"&apikey={Uri.EscapeDataString(apiKey)}" +
-                                $"&to={Uri.EscapeDataString(var1)}" +
+                                $"&to={Uri.EscapeDataString(loginId)}" +
                                 $"&from={Uri.EscapeDataString(senderId)}" +
                                 $"&templatename={Uri.EscapeDataString(templateName)}" +
-                                $"&var1={Uri.EscapeDataString(var1)}" +
-                                $"&var2={Uri.EscapeDataString(var2)}";
+                                $"&var1={Uri.EscapeDataString(loginId)}" +
+                                $"&var2={Uri.EscapeDataString(otp)}";
 
                 using (HttpClient client = new HttpClient())
                 {
@@ -196,19 +192,12 @@ namespace MyCarBuddy.API.Controllers
                     var json = JsonDocument.Parse(result);
                     if (json.RootElement.GetProperty("Status").GetString() != "Success")
                         return StatusCode(500, new { Success = false, Message = "Failed to send SMS OTP", apiResponse = result });
-
-                    return Ok(new { Success = true, Message = "OTP sent successfully." });
                 }
-            }
-
-
-            else
-            {
-                return BadRequest(new { Success = false, Message = "Please provide a valid Email or Phone Number." });
             }
 
             return Ok(new { Success = true, Message = "OTP sent successfully." });
         }
+
 
 
 
