@@ -36,6 +36,11 @@ namespace MyCarBuddy.API.Models
         public string PackageImage { get; set; }
         public string BannerImage { get; set; }
         public bool IsActive { get; set; }
+        public decimal TotalPrice { get; set; }
+
+        public decimal Serv_Off_Price { get; set; }
+
+        public decimal Serv_Reg_Price { get; set; }
     }
 
 }

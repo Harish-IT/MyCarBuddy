@@ -212,7 +212,7 @@ namespace MyCarBuddy.API.Controllers
                 // 1. Check OTP via Stored Procedure
                 SqlCommand cmd = new SqlCommand("SP_VerifyCustomerOTP", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@Email", request.Email);
+                cmd.Parameters.AddWithValue("@LoginId", request.LoginId);
                 cmd.Parameters.AddWithValue("@OTP", request.OTP);
                 conn.Open();
                 var reader = cmd.ExecuteReader();
@@ -233,7 +233,7 @@ namespace MyCarBuddy.API.Controllers
                     // 2. Mark OTP as used
                     SqlCommand updateCmd = new SqlCommand("SP_MarkCustomerOTPUsed", conn);
                     updateCmd.CommandType = CommandType.StoredProcedure;
-                    updateCmd.Parameters.AddWithValue("@Email", request.Email);
+                    updateCmd.Parameters.AddWithValue("@LoginId", request.LoginId);
                     updateCmd.Parameters.AddWithValue("@OTP", request.OTP);
                     updateCmd.ExecuteNonQuery();
 
@@ -266,7 +266,7 @@ namespace MyCarBuddy.API.Controllers
         }
 
         [HttpPost("Techsend-otp")]
-        public async Task<IActionResult> TechSendOtp([FromBody] CustomerLoginRequest request)
+        public async Task<IActionResult> TechSendOtp([FromBody] TechLoginRequest request)
         {
             // 1. Generate OTP
             string otp = new Random().Next(100000, 999999).ToString();
