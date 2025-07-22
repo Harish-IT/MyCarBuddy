@@ -205,6 +205,8 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
+
+
         [HttpPut]
         [Route("UpdateTechnicians")]
         public async Task<IActionResult> UpdateTechnicians([FromForm] TechniciansModel technicians)
