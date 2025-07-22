@@ -15,6 +15,8 @@ using System.Data.Entity.Core.Common.CommandTrees.ExpressionBuilder;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+
 
 namespace MyCarBuddy.API.Controllers
 {
@@ -465,54 +467,88 @@ namespace MyCarBuddy.API.Controllers
         #region GetTechnicianByID
 
         [HttpGet("technicianid")]
-
         public IActionResult GetTechnicianByID(int technicianid)
         {
             try
             {
                 DataTable dt = new DataTable();
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using (SqlCommand cmd = new SqlCommand("sp_GetTechniciansDetailsByID", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@TechID", technicianid);
+
                         conn.Open();
-                        using(SqlDataReader reader=cmd.ExecuteReader())
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             dt.Load(reader);
-
                         }
                         conn.Close();
-
                     }
                 }
-                if(dt.Rows.Count==0)
+
+                if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "Technicians not found...." });
+                    return NotFound(new { message = "Technician not found..." });
                 }
 
-                var jsonResult = new List<Dictionary<string, object>>();
+                List<Dictionary<string, object>> jsonResult = new List<Dictionary<string, object>>();
+
                 foreach (DataRow row in dt.Rows)
                 {
                     var dict = new Dictionary<string, object>();
+
                     foreach (DataColumn col in dt.Columns)
                     {
-                        dict[col.ColumnName] = row[col];
+                        var colValue = row[col];
+
+                        // Deserialize JSON columns properly
+                        if ((col.ColumnName == "Skills" || col.ColumnName == "Documents") &&
+                            colValue != DBNull.Value &&
+                            !string.IsNullOrWhiteSpace(colValue.ToString()))
+                        {
+                            try
+                            {
+                                // Deserialize into a list of dictionary
+                                dict[col.ColumnName] = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(colValue.ToString());
+                            }
+                            catch
+                            {
+                                dict[col.ColumnName] = null; // fallback if JSON is invalid
+                            }
+                        }
+                        else if (colValue == DBNull.Value)
+                        {
+                            dict[col.ColumnName] = null;
+                        }
+                        else
+                        {
+                            dict[col.ColumnName] = colValue;
+                        }
                     }
+
                     jsonResult.Add(dict);
                 }
 
-                // If you expect only one row, you can return jsonResult[0]
-                return Ok(new { status = true, data = (object)(jsonResult.Count == 1 ? jsonResult[0] : jsonResult) });
-
+                // If only one record expected, return single object
+                return Ok(new
+                {
+                    status = true,
+                    data = jsonResult.Count == 1 ? jsonResult[0] : (object)jsonResult
+                });
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { status=false, message = "An Error occured while retrieving the Technicians by ID..", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    status = false,
+                    message = "An error occurred while retrieving the Technician by ID.",
+                    error = ex.Message
+                });
             }
-
         }
 
         #endregion

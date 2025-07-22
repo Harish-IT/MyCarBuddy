@@ -92,7 +92,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@Description", skill.Description);
                         cmd.Parameters.AddWithValue("@ModifiedBy", skill.ModifiedBy);
                         cmd.Parameters.AddWithValue("@IsActive", skill.IsActive);
-                       
+
 
 
                         conn.Open();

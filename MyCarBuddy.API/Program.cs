@@ -33,11 +33,6 @@ builder.Services.AddEndpointsApiExplorer();
 
 
 
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = 104_857_600; // 100MB
-});
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
