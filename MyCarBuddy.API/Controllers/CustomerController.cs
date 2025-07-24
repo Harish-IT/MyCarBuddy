@@ -13,6 +13,8 @@ using System.Data;
 using System.Data.Entity.Core.Common.CommandTrees.ExpressionBuilder;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 namespace MyCarBuddy.API.Controllers
 {
@@ -45,98 +47,125 @@ namespace MyCarBuddy.API.Controllers
         }
 
 
-        [HttpPost("InsertCustomer")]
-
-        public async Task<IActionResult> InsertCustomer([FromForm] CustomerModel model)
+        [HttpPost("send-otp")]
+        public async Task<IActionResult> SendOtp([FromForm] string phoneNumber)
         {
             try
             {
-                var missingFields = new List<string>();
-                if (string.IsNullOrWhiteSpace(model.FullName))
-                    missingFields.Add("FullName");
-                if (string.IsNullOrWhiteSpace(model.PhoneNumber))
-                    missingFields.Add("PhoneNumber");
-                if (string.IsNullOrWhiteSpace(model.Email))
-                    missingFields.Add("Email");
+                if (string.IsNullOrWhiteSpace(phoneNumber))
+                    return BadRequest(new { Success = false, Message = "Phone number is required" });
 
-                if (missingFields.Any())
+                if (phoneNumber.Length == 10)
+                    phoneNumber = "91" + phoneNumber;
+                else if (!phoneNumber.StartsWith("91") || phoneNumber.Length != 12)
+                    return BadRequest(new { Success = false, Message = "Invalid phone number" });
+
+                string otp = new Random().Next(100000, 999999).ToString();
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    return BadRequest($"The following fields are required: {string.Join(", ", missingFields)}");
+                    await conn.OpenAsync();
+                    using (SqlCommand cmd = new SqlCommand("SP_SaveCustomerOTPTemp", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@LoginId", phoneNumber);
+                        cmd.Parameters.AddWithValue("@OTP", otp);
+                        await cmd.ExecuteNonQueryAsync();
+                    }
                 }
 
-                //string profileImagePath = null;
-                //if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
-                //{
-                //   // var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(),  "Images", "Customer");
-                //    var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Customer");
-                //    if (!Directory.Exists(imagesFolder))
-                //        Directory.CreateDirectory(imagesFolder);
+                string apiKey = "00aaa0bb-62dc-11f0-a562-0200cd936042";
+                string senderId = "GLANSA";
+                string templateName = "MycarbuddySMS";
+                string apiUrl = $"https://2factor.in/API/R1?module=TRANS_SMS" +
+                                $"&apikey={apiKey}" +
+                                $"&to={phoneNumber}" +
+                                $"&from={senderId}" +
+                                $"&templatename={templateName}" +
+                                $"&var1={phoneNumber}" +
+                                $"&var2={otp}";
 
-                //    //var originalFileName = Path.GetFileName(model.ProfileImageFile.FileName);
-                //    //var filePath = Path.Combine(imagesFolder, originalFileName);
+                using HttpClient client = new HttpClient();
+                var response = await client.GetAsync(apiUrl);
+                var result = await response.Content.ReadAsStringAsync();
+
+                using var json = JsonDocument.Parse(result);
+                var status = json.RootElement.GetProperty("Status").GetString();
+
+                if (status != "Success")
+                    return StatusCode(500, new { Success = false, Message = "OTP send failed", APIResponse = result });
+
+                return Ok(new { Success = true, Message = "OTP sent successfully" });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { Success = false, Message = ex.Message });
+            }
+        }
 
 
 
+        [HttpPost("verify-otp")]
+        public IActionResult VerifyOtp([FromForm] string phoneNumber, [FromForm] string otp)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber) || string.IsNullOrWhiteSpace(otp))
+                return BadRequest(new { Success = false, Message = "Phone number and OTP required" });
 
-                //    var originalFileName = Path.GetFileNameWithoutExtension(model.ProfileImageFile.FileName);
-                //    var fileExt = Path.GetExtension(model.ProfileImageFile.FileName);
-                //    var randomString = GetRandomAlphanumericString(8); // 8-character random string
-                //    var uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
-                //    var filePath = Path.Combine(imagesFolder, uniqueFileName);
+            using SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            conn.Open();
+
+            using SqlCommand cmd = new SqlCommand("SP_VerifyCustomerOTPTemp", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@LoginId", phoneNumber);
+            cmd.Parameters.AddWithValue("@OTP", otp);
+
+            var reader = cmd.ExecuteReader();
+            if (!reader.Read())
+                return Unauthorized(new { Success = false, Message = "Invalid or expired OTP" });
+
+            reader.Close();
+
+            using SqlCommand markCmd = new SqlCommand("SP_MarkCustomerOTPUsedTemp", conn);
+            markCmd.CommandType = CommandType.StoredProcedure;
+            markCmd.Parameters.AddWithValue("@LoginId", phoneNumber);
+            markCmd.Parameters.AddWithValue("@OTP", otp);
+            markCmd.ExecuteNonQuery();
+
+            return Ok(new { Success = true, Message = "OTP verified. You can proceed to register." });
+        }
 
 
-
-                //    if (System.IO.File.Exists(filePath))
-                //    {
-                //         uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
-                //        filePath = Path.Combine(imagesFolder, uniqueFileName);
-                //        originalFileName = uniqueFileName;
-                //    }
-
-                //    using (var stream = new FileStream(filePath, FileMode.Create))
-                //    {
-                //        await model.ProfileImageFile.CopyToAsync(stream);
-                //    }
-
-                //    profileImagePath = Path.Combine("Customer", originalFileName).Replace("\\", "/");
-                //}
-
+        [HttpPost("register-customer")]
+        public async Task<IActionResult> RegisterCustomer([FromForm] CustomerModel model)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.PhoneNumber) || string.IsNullOrWhiteSpace(model.Email))
+                    return BadRequest(new { Success = false, Message = "Required fields missing" });
 
                 string profileImagePath = null;
-                if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
+                if (model.ProfileImageFile != null)
                 {
-                    var imagesFolder = Path.Combine(_env.WebRootPath, "Images", "Customer");
-                    if (!Directory.Exists(imagesFolder))
-                        Directory.CreateDirectory(imagesFolder);
+                    var folder = Path.Combine(_env.WebRootPath, "Images", "Customer");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
-                    var originalFileName = Path.GetFileNameWithoutExtension(model.ProfileImageFile.FileName);
-                    var fileExt = Path.GetExtension(model.ProfileImageFile.FileName);
-                    var randomString = GetRandomAlphanumericString(8); // 8-character random string
-                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
-                    var filePath = Path.Combine(imagesFolder, uniqueFileName);
+                    var fileName = Path.GetFileNameWithoutExtension(model.ProfileImageFile.FileName);
+                    var ext = Path.GetExtension(model.ProfileImageFile.FileName);
+                    string unique = $"{fileName}_{Guid.NewGuid():N}{ext}";
+                    string fullPath = Path.Combine(folder, unique);
 
-                    // Optional: Extra collision check (very rare with random string)
-                    int counter = 1;
-                    while (System.IO.File.Exists(filePath))
-                    {
-                        uniqueFileName = $"{originalFileName}_{randomString}_{counter}{fileExt}";
-                        filePath = Path.Combine(imagesFolder, uniqueFileName);
-                        counter++;
-                    }
+                    using var stream = new FileStream(fullPath, FileMode.Create);
+                    await model.ProfileImageFile.CopyToAsync(stream);
 
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await model.ProfileImageFile.CopyToAsync(stream);
-                    }
-
-                    profileImagePath = Path.Combine("Customer", uniqueFileName).Replace("\\", "/");
+                    profileImagePath = Path.Combine("Customer", unique).Replace("\\", "/");
                 }
 
-
                 int newCustId;
-                using (SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_InsertCustomerDetails",conn))
+                    await conn.OpenAsync();
+                    using (SqlCommand cmd = new SqlCommand("sp_InsertCustomerDetails", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@FullName", model.FullName);
@@ -144,31 +173,80 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@AlternateNumber", (object?)model.AlternateNumber ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@Email", model.Email);
                         cmd.Parameters.AddWithValue("@ProfileImage", (object?)profileImagePath ?? DBNull.Value);
-                       // cmd.Parameters.AddWithValue("@StateID", model.StateID);
-                      //  cmd.Parameters.AddWithValue("@CityID", model.CityID);
 
-                        await conn.OpenAsync();
                         var result = await cmd.ExecuteScalarAsync();
                         newCustId = Convert.ToInt32(result);
                     }
                 }
-                return Ok(new { status = true , message="Customer record is inserted successfully...", CustID = newCustId });
 
+                return Ok(new { Success = true, Message = "Customer registered", CustID = newCustId });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { status=false, message = "An error occurred while inserting the record.", error = ex.Message });
-
-
+                return StatusCode(500, new { Success = false, Message = ex.Message });
             }
-
-
         }
 
         #endregion
 
+
+
+        [HttpPost("update-customer")]
+        public async Task<IActionResult> UpdateCustomer([FromForm] CustomerModel model)
+        {
+            try
+            {
+                if (model.CustID <= 0)
+                    return BadRequest(new { Success = false, Message = "Invalid customer ID" });
+
+                if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.PhoneNumber) || string.IsNullOrWhiteSpace(model.Email))
+                    return BadRequest(new { Success = false, Message = "Required fields missing" });
+
+                string profileImagePath = null;
+                if (model.ProfileImageFile != null)
+                {
+                    var folder = Path.Combine(_env.WebRootPath, "Images", "Customer");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                    var fileName = Path.GetFileNameWithoutExtension(model.ProfileImageFile.FileName);
+                    var ext = Path.GetExtension(model.ProfileImageFile.FileName);
+                    string unique = $"{fileName}_{Guid.NewGuid():N}{ext}";
+                    string fullPath = Path.Combine(folder, unique);
+
+                    using var stream = new FileStream(fullPath, FileMode.Create);
+                    await model.ProfileImageFile.CopyToAsync(stream);
+
+                    profileImagePath = Path.Combine("Customer", unique).Replace("\\", "/");
+                }
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    await conn.OpenAsync();
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateCustomerDetails", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CustID", model.CustID);
+                        cmd.Parameters.AddWithValue("@FullName", model.FullName);
+                        cmd.Parameters.AddWithValue("@PhoneNumber", model.PhoneNumber);
+                        cmd.Parameters.AddWithValue("@AlternateNumber", (object?)model.AlternateNumber ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Email", model.Email);
+                        cmd.Parameters.AddWithValue("@ProfileImage", (object?)profileImagePath ?? DBNull.Value);
+
+                        int rows = await cmd.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                            return Ok(new { Success = true, Message = "Customer updated successfully" });
+                        else
+                            return NotFound(new { Success = false, Message = "Customer not found or no changes made" });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { Success = false, Message = ex.Message });
+            }
+        }
 
     }
 }
