@@ -255,7 +255,10 @@ namespace MyCarBuddy.API.Controllers
                         Message = "Login Success",
                         Token = token,
                         Name = customerName,
-                        Email = customerEmail
+                        Email = customerEmail,
+                        CustID=customerId
+                        
+                        
                     });
                 }
                 else

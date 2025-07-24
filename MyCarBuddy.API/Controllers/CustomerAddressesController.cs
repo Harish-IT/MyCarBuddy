@@ -57,15 +57,19 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CreatedBy", customeraddress.CreatedBy);
                         cmd.Parameters.AddWithValue("@IsActive", customeraddress.IsActive);
                         conn.Open();
-                        int rows = cmd.ExecuteNonQuery();
-
-                        if (rows > 0)
+                        object result = cmd.ExecuteScalar(); 
+                        if (result != null && int.TryParse(result.ToString(), out int addressId))
                         {
-                            return Ok(new { status = true, message = "Customer Addreess inserted successfully." });
+                            return Ok(new
+                            {
+                                status = true,
+                                message = "Customer Address inserted successfully.",
+                                AddressID = addressId
+                            });
                         }
                         else
                         {
-                            return BadRequest(new { status = false, message = "Customer Addreess not inserted." });
+                            return BadRequest(new { status = false, message = "Customer Address not inserted." });
                         }
                     }
                 }
