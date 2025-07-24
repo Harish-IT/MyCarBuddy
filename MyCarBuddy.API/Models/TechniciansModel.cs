@@ -56,8 +56,8 @@ namespace MyCarBuddy.API.Models
         [BindNever]
         public DateTime CreatedDate { get; set; }
 
-        [Required(ErrorMessage = "CreatedBy is required.")]
-        public string CreatedBy { get; set; }
+        // [Required(ErrorMessage = "CreatedBy is required.")]
+        public string CreatedBy { get; set; } = null;
 
         [BindNever]
         public DateTime? ModifiedDate { get; set; }
@@ -72,7 +72,9 @@ namespace MyCarBuddy.API.Models
 
         public int? DistributorID { get; set; }
 
-        public int? SkillID { get; set; }
+        public List<int> SkillIDs { get; set; }
+
+        // public int? SkillID { get; set; }
 
         // --- Document Upload Handling ---
 

@@ -31,6 +31,8 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+
         [HttpPost]
         public IActionResult InsertCoupon([FromBody] CouponsModel coupons)
         {
@@ -106,7 +108,96 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the coupon.", error = ex.Message });
             }
         }
+        [HttpGet]
+        public IActionResult GetListCoupons()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListAllCoupons", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                    var jsonResult = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            dict[col.ColumnName] = row[col];
+                        }
+                        jsonResult.Add(dict);
+                    }
+                    return Ok(jsonResult);
+                }
+            }
+            catch (Exception ex)
+            {
 
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the times slot.", error = ex.Message });
+
+            }
+        }
+
+
+        #region GetCouponsListById
+
+        [HttpGet("couponid")]
+
+        public IActionResult GetCouponsListById(int couponid)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListCouponsById", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CouponID", couponid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                }
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Coupons List  not found" });
+                }
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+                return Ok(jsonResult.Count == 1 ? jsonResult[0] : jsonResult);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Coupons.", error = ex.Message });
+
+            }
+
+        }
+
+        #endregion
 
     }
 }
