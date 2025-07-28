@@ -85,7 +85,7 @@ namespace MyCarBuddy.API.Controllers
                             using (SqlCommand cmd = new SqlCommand("INSERT INTO BookingImages (BookingID, ImageURL, UploadedBy, UploadedAt, CustID, TechID, ImageUploadType) VALUES (@BookingID, @ImageURL, @UploadedBy, @UploadedAt, @CustID, NULL, 'Customer')", conn))
                             {
                                 cmd.Parameters.AddWithValue("@BookingID", bookingId);
-                                cmd.Parameters.AddWithValue("@ImageURL", "/Uploads/" + fileName);
+                                cmd.Parameters.AddWithValue("@ImageURL", "/BookingImages/" + fileName);
                                 cmd.Parameters.AddWithValue("@UploadedBy", model.CustID);
                                 cmd.Parameters.AddWithValue("@UploadedAt", DateTime.Now);
                                 cmd.Parameters.AddWithValue("@CustID", model.CustID);

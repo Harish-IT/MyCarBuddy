@@ -43,6 +43,7 @@
 
 	<!-- Optional: Include empty folders -->
 	<ItemGroup>
+		<Folder Include="wwwroot\BookingImages\" />
 		<Folder Include="wwwroot\Documents\" />
 		<Folder Include="wwwroot\Images\Customer\" />
 		<Folder Include="wwwroot\Images\Category\" />
@@ -50,7 +51,6 @@
 		<Folder Include="wwwroot\Images\PackageImages\" />
 		<Folder Include="wwwroot\Images\SubCategory2\" />
 		<Folder Include="wwwroot\Images\SubCategory1\" />
-		<Folder Include="wwwroot\BookingImages\" />
 	</ItemGroup>
 
 	<!-- ✅ No need to include wwwroot files manually -->

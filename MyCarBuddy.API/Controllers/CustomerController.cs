@@ -191,7 +191,6 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
-
         [HttpPost("update-customer")]
         public async Task<IActionResult> UpdateCustomer([FromForm] CustomerModel model)
         {
