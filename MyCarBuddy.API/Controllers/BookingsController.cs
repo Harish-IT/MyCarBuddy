@@ -105,10 +105,11 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@OthersFullName", model.OthersFullName ?? "");
                         cmd.Parameters.AddWithValue("@OthersPhoneNumber", model.OthersPhoneNumber ?? "");
                         cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
-                        cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
-                        cmd.Parameters.AddWithValue("@ModifiedBy", model.ModifiedBy);
-                        cmd.Parameters.AddWithValue("@ModifiedDate", model.ModifiedDate);
-                        cmd.Parameters.AddWithValue("@IsActive", model.IsActive);
+                        //cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
+                        //cmd.Parameters.AddWithValue("@ModifiedBy", model.ModifiedBy);
+                        //cmd.Parameters.AddWithValue("@ModifiedDate", model.ModifiedDate);
+                        //cmd.Parameters.AddWithValue("@IsActive", model.IsActive);
+                        cmd.Parameters.AddWithValue("@VechicleID", model.VechicleID);
 
                         var outputId = new SqlParameter("@BookingID", SqlDbType.Int)
                         {

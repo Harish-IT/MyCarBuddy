@@ -45,6 +45,9 @@ namespace MyCarBuddy.API.Models
 
         // Optional images
         public List<IFormFile> Images { get; set; }
+
+        public int VechicleID { get; set; }
+        
     }
 
 }
