@@ -15,6 +15,7 @@ using MyCarBuddy.API.Utilities;
 using GSF;
 using Braintree;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq;
 
 
 namespace MyCarBuddy.API.Controllers
@@ -36,9 +37,8 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
-
         [HttpPost("insert-booking")]
-        public async Task<IActionResult> InsertBooking([FromForm] Bookings model)
+        public async Task<IActionResult> InsertBooking([FromForm] BookingInsertDTO model)
         {
             try
             {
@@ -46,18 +46,69 @@ namespace MyCarBuddy.API.Controllers
 
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
+                    await conn.OpenAsync();
+
+                    // Generate BookingTrackID
+                    string month = DateTime.Now.ToString("MM");
+                    string year = DateTime.Now.ToString("yyyy");
+                    string prefix = $"MYCAR{month}{year}";
+                    string lastTrackId = null;
+                    int nextSequence = 1;
+
+                    using (SqlCommand cmdCheck = new SqlCommand("SELECT TOP 1 BookingTrackID FROM Bookings WHERE BookingTrackID LIKE @Prefix + '%' ORDER BY BookingID DESC", conn))
+                    {
+                        cmdCheck.Parameters.AddWithValue("@Prefix", prefix);
+                        var result = await cmdCheck.ExecuteScalarAsync();
+                        if (result != null)
+                        {
+                            lastTrackId = result.ToString();
+                            string lastSeqStr = lastTrackId.Substring(prefix.Length);
+                            if (int.TryParse(lastSeqStr, out int lastSeq))
+                                nextSequence = lastSeq + 1;
+                        }
+                    }
+
+                    string newTrackId = $"{prefix}{nextSequence:D3}";
+                    model.BookingTrackID = newTrackId;
+
+                    // Insert Booking
                     using (SqlCommand cmd = new SqlCommand("SP_InsertBookings", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@BookingTrackID", model.BookingTrackID ?? "");
                         cmd.Parameters.AddWithValue("@CustID", model.CustID);
-                        cmd.Parameters.AddWithValue("@VehicleID", model.VehicleID);
-                        cmd.Parameters.AddWithValue("@PricingID", model.PricingID);
-                        cmd.Parameters.AddWithValue("@AddressID", model.AddressID);
-                        cmd.Parameters.AddWithValue("@ScheduledDate", model.ScheduledDate);
-                        cmd.Parameters.AddWithValue("@BookingPrice", model.BookingPrice);
+                        cmd.Parameters.AddWithValue("@TechID", model.TechID);
+                        cmd.Parameters.AddWithValue("@TechFullName", model.TechFullName ?? "");
+                        cmd.Parameters.AddWithValue("@TechPhoneNumber", model.TechPhoneNumber ?? "");
+                        cmd.Parameters.AddWithValue("@CustFullName", model.CustFullName ?? "");
+                        cmd.Parameters.AddWithValue("@CustPhoneNumber", model.CustPhoneNumber ?? "");
+                        cmd.Parameters.AddWithValue("@CustEmail", model.CustEmail ?? "");
+                        cmd.Parameters.AddWithValue("@StateID", model.StateID);
+                        cmd.Parameters.AddWithValue("@CityID", model.CityID);
+                        cmd.Parameters.AddWithValue("@Pincode", model.Pincode);
+                        cmd.Parameters.AddWithValue("@FullAddress", model.FullAddress ?? "");
+                        cmd.Parameters.AddWithValue("@BookingStatus", model.BookingStatus ?? "Pending");
+                        cmd.Parameters.AddWithValue("@Longitude", model.Longitude ?? "");
+                        cmd.Parameters.AddWithValue("@Latitude", model.Latitude ?? "");
+                        cmd.Parameters.AddWithValue("@PackageIds", model.PackageIds ?? "");
+                        cmd.Parameters.AddWithValue("@PackagePrice", model.PackagePrice ?? "");
+                        cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
+                        cmd.Parameters.AddWithValue("@CouponCode", model.CouponCode ?? "");
+                        cmd.Parameters.AddWithValue("@CouponAmount", model.CouponAmount);
+                        cmd.Parameters.AddWithValue("@BookingFrom", model.BookingFrom ?? "App");
+                        cmd.Parameters.AddWithValue("@PaymentMethod", model.PaymentMethod ?? "");
                         cmd.Parameters.AddWithValue("@Notes", model.Notes ?? "");
-                        cmd.Parameters.AddWithValue("@OTPForCompletion", model.OTPForCompletion);
-                        cmd.Parameters.AddWithValue("@CouponID", model.CouponID);
+                        cmd.Parameters.AddWithValue("@BookingDate", model.BookingDate);
+                        cmd.Parameters.AddWithValue("@TimeSlot", model.TimeSlot ?? "");
+                        cmd.Parameters.AddWithValue("@IsOthers", model.IsOthers);
+                        cmd.Parameters.AddWithValue("@OthersFullName", model.OthersFullName ?? "");
+                        cmd.Parameters.AddWithValue("@OthersPhoneNumber", model.OthersPhoneNumber ?? "");
+                        cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
+                        cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
+                        cmd.Parameters.AddWithValue("@ModifiedBy", model.ModifiedBy);
+                        cmd.Parameters.AddWithValue("@ModifiedDate", model.ModifiedDate);
+                        cmd.Parameters.AddWithValue("@IsActive", model.IsActive);
 
                         var outputId = new SqlParameter("@BookingID", SqlDbType.Int)
                         {
@@ -65,30 +116,31 @@ namespace MyCarBuddy.API.Controllers
                         };
                         cmd.Parameters.Add(outputId);
 
-                        await conn.OpenAsync();
                         await cmd.ExecuteNonQueryAsync();
                         bookingId = Convert.ToInt32(outputId.Value);
                     }
 
-                    // Insert Images (Optional)
+                    // Save Images
                     if (model.Images != null && model.Images.Count > 0)
                     {
                         foreach (var image in model.Images)
                         {
                             var fileName = Guid.NewGuid() + Path.GetExtension(image.FileName);
                             var savePath = Path.Combine("wwwroot", "BookingImages", fileName);
-                            using (var stream = new FileStream(savePath, FileMode.Create))
-                            {
-                                await image.CopyToAsync(stream);
-                            }
 
-                            using (SqlCommand cmd = new SqlCommand("INSERT INTO BookingImages (BookingID, ImageURL, UploadedBy, UploadedAt, CustID, TechID, ImageUploadType) VALUES (@BookingID, @ImageURL, @UploadedBy, @UploadedAt, @CustID, NULL, 'Customer')", conn))
+                            using (var stream = new FileStream(savePath, FileMode.Create))
+                                await image.CopyToAsync(stream);
+
+                            using (SqlCommand cmd = new SqlCommand(@"INSERT INTO BookingImages 
+                        (BookingID, ImageURL, UploadedBy, UploadedAt, CustID, TechID, ImageUploadType)
+                        VALUES (@BookingID, @ImageURL, @UploadedBy, @UploadedAt, @CustID, @TechID, 'Customer')", conn))
                             {
                                 cmd.Parameters.AddWithValue("@BookingID", bookingId);
                                 cmd.Parameters.AddWithValue("@ImageURL", "/BookingImages/" + fileName);
-                                cmd.Parameters.AddWithValue("@UploadedBy", model.CustID);
+                                cmd.Parameters.AddWithValue("@UploadedBy", model.CreatedBy);
                                 cmd.Parameters.AddWithValue("@UploadedAt", DateTime.Now);
                                 cmd.Parameters.AddWithValue("@CustID", model.CustID);
+                                cmd.Parameters.AddWithValue("@TechID", model.TechID);
 
                                 await cmd.ExecuteNonQueryAsync();
                             }
@@ -96,17 +148,25 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                // ✅ Send SMS & Email here (pseudo method)
+                // Notification
                 await SendBookingConfirmationSMS(model.CustID, bookingId);
                 await SendBookingConfirmationEmail(model.CustID, bookingId);
 
-                return Ok(new { Success = true, BookingID = bookingId, Message = "Booking created successfully." });
+                return Ok(new
+                {
+                    Success = true,
+                    BookingID = bookingId,
+                    BookingTrackID = model.BookingTrackID,
+                    Message = "Booking created successfully."
+                });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { Success = false, Message = ex.Message });
             }
         }
+
+
 
         private Task SendBookingConfirmationSMS(int custId, int bookingId)
         {
