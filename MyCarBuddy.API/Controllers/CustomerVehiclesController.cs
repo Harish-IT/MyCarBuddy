@@ -23,6 +23,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class CustomerVehiclesController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<CustomerVehiclesController> _logger;
 
@@ -31,6 +33,8 @@ namespace MyCarBuddy.API.Controllers
             _configuration = configuration;
             _logger = logger;
         }
+
+        #endregion
 
         #region InsertCustomerVehicle
 
@@ -52,6 +56,11 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@KilometerDriven", customervehiclemodel.KilometersDriven);
                         cmd.Parameters.AddWithValue("@TransmissionType", customervehiclemodel.TransmissionType);
                         cmd.Parameters.AddWithValue("@CreatedBy", customervehiclemodel.CreatedBy);
+                        cmd.Parameters.AddWithValue("@BrandID", customervehiclemodel.BrandID);
+                        cmd.Parameters.AddWithValue("@ModelID", customervehiclemodel.ModelID);
+                        cmd.Parameters.AddWithValue("@FuelTypeID", customervehiclemodel.FuelTypeID);
+
+
                         await conn.OpenAsync();
                         await cmd.ExecuteNonQueryAsync();
 

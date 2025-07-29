@@ -3,6 +3,8 @@ using System;
 
 namespace MyCarBuddy.API.Models
 {
+
+    // insert Model
     public class CancellationsModel
     {
         public int? BookingID {  get; set; }
@@ -11,7 +13,7 @@ namespace MyCarBuddy.API.Models
         public string Reason {  get; set; }
         public string RefundStatus {  get; set; }
     }
-
+    //Get List Model
     public class CancellationList
     {
         public int CancelID { get; set; }

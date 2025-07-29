@@ -24,6 +24,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class VehicleModelsController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<VehicleModelsController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -34,6 +36,8 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
 
 
         #region Insert Vehicle Model

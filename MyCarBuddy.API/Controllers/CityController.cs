@@ -21,12 +21,16 @@ namespace MyCarBuddy.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<CityController> _logger;
 
+        #region configuraton
         public CityController(IConfiguration configuration, ILogger<CityController> logger)
         {
             _configuration = configuration;
             _logger = logger;
         }
+        #endregion
+
         #region InsertCity
+
         [HttpPost]
         public IActionResult InsertCity(CityModel city)
         {
@@ -78,8 +82,9 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
         #region UpdateCity
+
         [HttpPut]
-        public IActionResult UpdateCity(CityModel city)
+        public IActionResult UpdateCity(UpdateCity city)
         {
             try
             {

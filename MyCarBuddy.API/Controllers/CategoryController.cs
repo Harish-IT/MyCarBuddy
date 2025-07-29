@@ -162,7 +162,7 @@ namespace MyCarBuddy.API.Controllers
         #region Update category
 
         [HttpPut("UpdateCategory")]
-        public async Task<IActionResult> UpdateCategory([FromForm] CategoryModel category)
+        public async Task<IActionResult> UpdateCategory([FromForm] Updatecategory category)
         {
             try
             {

@@ -21,6 +21,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class FeedbackController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<FeedbackController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -31,6 +33,10 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
+
+        #region InsertFeedback
 
         [HttpPost]
 
@@ -66,6 +72,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region GetListFeedback
 
         [HttpGet]
         public IActionResult GetListFeedback()
@@ -106,6 +115,8 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
 
         #region GetFeedbackListByCustIdBookingId
 

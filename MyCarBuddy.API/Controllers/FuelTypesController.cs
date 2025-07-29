@@ -23,6 +23,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class FuelTypesController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<FuelTypesController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -34,6 +36,10 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+        #endregion
+
+        #region GetRandomAlphanumericString
+
         private string GetRandomAlphanumericString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -42,8 +48,9 @@ namespace MyCarBuddy.API.Controllers
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
+        #endregion
 
-
+        #region InsertFuelType
 
         [HttpPost("InsertFuelType")]
 
@@ -61,35 +68,6 @@ namespace MyCarBuddy.API.Controllers
                 }
 
 
-                //string brandLogoFileName = null;
-                //if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
-                //{
-
-                //    var brandLogoFolder = Path.Combine(_env.WebRootPath, "Images", "FuelImages");
-
-                //    if (!Directory.Exists(brandLogoFolder))
-                //        Directory.CreateDirectory(brandLogoFolder);
-
-                //    var originalFileName = Path.GetFileName(fueltype.FuelImage1.FileName);
-                //    var filePath = Path.Combine(brandLogoFolder, originalFileName);
-
-                //    if (System.IO.File.Exists(filePath))
-                //    {
-                //        var uniqueFileName = $"{Guid.NewGuid()}_{originalFileName}";
-                //        filePath = Path.Combine(brandLogoFolder, uniqueFileName);
-                //        //brandLogoFileName = "/FuelImages/{uniqueFileName}";
-                //        brandLogoFileName = $"FuelImages/{uniqueFileName}";
-                //    }
-                //    else
-                //    {
-                //        brandLogoFileName = $"FuelImages/{originalFileName}";
-                //    }
-
-                //    using (var stream = new FileStream(filePath, FileMode.Create))
-                //    {
-                //        await fueltype.FuelImage1.CopyToAsync(stream);
-                //    }
-                //}
 
                 string brandLogoFileName = null;
                 if (fueltype.FuelImage1 != null && fueltype.FuelImage1.Length > 0)
@@ -158,10 +136,12 @@ namespace MyCarBuddy.API.Controllers
         }
 
 
+        #endregion
 
+        #region UpdateFuelType
 
         [HttpPut("UpdateFuelType")]
-        public async Task<IActionResult> UpdateFuelType([FromForm] FuelTypeModel fueltype)
+        public async Task<IActionResult> UpdateFuelType([FromForm] UpdateFuelType fueltype)
         {
             try
             {
@@ -265,6 +245,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region GetAllFuelTypes
 
         [HttpGet("GetFuelTypes")]
 
@@ -313,6 +296,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+
+        #endregion
+
+        #region GetFuelTypesByID
 
         [HttpGet("fueltypeid")]
 
@@ -363,7 +350,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
+        #region DeleteVehicleBrand
 
         [HttpDelete("fueltypeid")]
         public IActionResult DeleteVehicleBrand(int fueltypeid)
@@ -409,7 +398,7 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-
+        #endregion
 
     }
 }

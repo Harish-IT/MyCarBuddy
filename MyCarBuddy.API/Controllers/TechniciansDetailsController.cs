@@ -25,6 +25,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class TechniciansDetailsController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<TechniciansDetailsController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -36,7 +38,7 @@ namespace MyCarBuddy.API.Controllers
             _env=env;
         }
 
-
+        #endregion
 
         #region InsertTechnicians
 
@@ -208,6 +210,7 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
+        #region UpdateTechnicians
 
         [HttpPut]
         [Route("UpdateTechnicians")]
@@ -422,10 +425,11 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-
+        #endregion
 
 
         #region GetAllTechnicians
+
         [HttpGet]
         public IActionResult GetAllTechnicians()
         {

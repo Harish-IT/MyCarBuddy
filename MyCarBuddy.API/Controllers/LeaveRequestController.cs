@@ -22,6 +22,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class LeaveRequestController : ControllerBase
     {
+        #region IConfiguration
         private readonly IConfiguration _configuration;
         private readonly ILogger<LeaveRequestController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -32,6 +33,10 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
+
+        #region Insert LeaveRequest
 
         [HttpPost]
 
@@ -71,6 +76,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region UpdateLeaveRequestStatus
+
         [HttpPut]
         public IActionResult UpdateLeaveRequestStatus(int leaveId, int status)
         {
@@ -100,6 +109,8 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the status.", error = ex.Message });
             }
         }
+
+        #endregion
 
         #region GetList LeaveRequest
 

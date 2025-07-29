@@ -21,6 +21,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class CouponsController : ControllerBase
     {
+        #region configuration
         private readonly IConfiguration _configuration;
         private readonly ILogger<CouponsController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -32,6 +33,9 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+        #endregion
+
+        #region InsertCoupon
 
         [HttpPost]
         public IActionResult InsertCoupon([FromBody] CouponsModel coupons)
@@ -68,9 +72,12 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region UpdateCoupon
 
         [HttpPut]
-        public IActionResult UpdateCoupon([FromBody] CouponsModel coupons)
+        public IActionResult UpdateCoupon([FromBody] UpdateCoupon coupons)
         {
 
             try
@@ -108,6 +115,11 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the coupon.", error = ex.Message });
             }
         }
+
+        #endregion
+
+        #region GetListCoupons
+
         [HttpGet]
         public IActionResult GetListCoupons()
         {
@@ -147,6 +159,8 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
 
 
         #region GetCouponsListById

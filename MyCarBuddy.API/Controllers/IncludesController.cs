@@ -21,6 +21,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class IncludesController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<IncludesController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -32,6 +34,8 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
 
         #region insert Include
 
@@ -82,7 +86,7 @@ namespace MyCarBuddy.API.Controllers
 
 
         [HttpPut]
-        public IActionResult UpdateInclude(IncludesModel include)
+        public IActionResult UpdateInclude(UpdateIncludes include)
         {
             try
             {

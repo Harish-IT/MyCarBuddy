@@ -23,6 +23,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class PlanPackagePriceController : ControllerBase
     {
+        #region IConfiguration
         private readonly IConfiguration _configuration;
         private readonly ILogger<PlanPackagePriceController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -35,6 +36,9 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+        #endregion
+
+        #region GetRandomAlphanumericString
         private string GetRandomAlphanumericString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -42,6 +46,10 @@ namespace MyCarBuddy.API.Controllers
             return new string(Enumerable.Repeat(chars, length)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
+
+        #endregion
+
+        #region AddPlanPackagePrices
 
         [HttpPost("AddPlanPackagePrice")]
 
@@ -120,6 +128,12 @@ namespace MyCarBuddy.API.Controllers
             }
 
         }
+
+        #endregion
+
+        #region UpdatePlanPackagePrice
+
+
         [HttpPut("UpdatePlanPackagePrice")]
         public async Task<IActionResult> UpdatePlanPackagePrice([FromForm] PlanPackagePriceModel planpricepackage)
         {
@@ -223,6 +237,7 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
 
         #region GetListPlanPackagePrice

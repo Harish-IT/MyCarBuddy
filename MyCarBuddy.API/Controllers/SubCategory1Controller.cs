@@ -22,6 +22,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class SubCategory1Controller : ControllerBase
     {
+        #region IConfiguration
 
         private readonly IConfiguration _configuration;
         private readonly ILogger<SubCategory1Controller> _logger;
@@ -34,6 +35,8 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
 
         #region Insert Category
 

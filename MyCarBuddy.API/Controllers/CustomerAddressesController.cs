@@ -20,6 +20,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class CustomerAddressesController : ControllerBase
     {
+        #region configuration
         private readonly IConfiguration _configuration;
         private readonly ILogger<CustomerAddressesController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -31,6 +32,8 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
 
         #region Insert CustomerAddress
         [HttpPost]
@@ -89,7 +92,7 @@ namespace MyCarBuddy.API.Controllers
 
 
         [HttpPut]
-        public IActionResult UpdateAddress(CustomerAddressesModel customeraddress)
+        public IActionResult UpdateAddress(UpdateCustomerAddresses customeraddress)
         {
             try
             {

@@ -3,6 +3,8 @@ using System;
 
 namespace MyCarBuddy.API.Models
 {
+
+    //Insert Model
     public class LeaveRequestModel
     {
         public int? LeaveId {  get; set; }
@@ -14,4 +16,7 @@ namespace MyCarBuddy.API.Models
         public int? RequestedToId { get; set; }
         public int? Status { get; set; }
     }
+
+
+
 }

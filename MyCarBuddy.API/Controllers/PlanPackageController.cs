@@ -19,6 +19,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class PlanPackageController : ControllerBase
     {
+        #region IConfiguration
         private readonly IConfiguration _configuration;
         private readonly ILogger<CategoryController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -30,6 +31,10 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
+
+        #region InsertPlanPackage
 
         [HttpPost("InsertPlanPackage")]
         public async Task<IActionResult> InsertPlanPackage([FromForm] PlanPackageModel model)
@@ -120,7 +125,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
+        #region GetPlanPackagesDetails
 
         [HttpGet("GetPlanPackagesDetails")]
         public IActionResult GetPlanPackagesDetails()
@@ -160,6 +167,9 @@ namespace MyCarBuddy.API.Controllers
             return Ok(packages);
         }
 
+        #endregion
+
+        #region UpdatePlanPackage
 
         [HttpPost("UpdatePlanPackage")]
         public async Task<IActionResult> UpdatePlanPackage([FromForm] PlanPackageModel model)
@@ -266,7 +276,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
+        #region GetPlanPackageDetailsByID
 
 
         [HttpGet("GetPlanPackageDetailsByID/{id}")]
@@ -312,6 +324,9 @@ namespace MyCarBuddy.API.Controllers
             return Ok(package);
         }
 
+        #endregion
+
+        #region GetPlanPackagesByCategoryAndSubCategory
 
         [HttpGet("GetPlanPackagesByCategoryAndSubCategory")]
         public IActionResult GetPlanPackagesByCategoryAndSubCategory(
@@ -369,6 +384,8 @@ namespace MyCarBuddy.API.Controllers
 
             return Ok(packages);
         }
+
+        #endregion
 
 
     }

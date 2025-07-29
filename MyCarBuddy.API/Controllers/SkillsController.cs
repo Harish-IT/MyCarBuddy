@@ -20,6 +20,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class SkillsController : ControllerBase
     {
+        #region IConfiguration
 
         private readonly IConfiguration _configuration;
         private readonly ILogger<SkillsController> _logger;
@@ -32,6 +33,8 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
             _env = env;
         }
+
+        #endregion
 
         #region InsertSkills
 

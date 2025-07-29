@@ -18,6 +18,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class StateController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<StateController> _logger;
 
@@ -27,6 +29,10 @@ namespace MyCarBuddy.API.Controllers
             _logger = logger;
         }
 
+        #endregion
+
+
+        #region InsertState
 
         [HttpPost]
         public IActionResult InsertState(StateModel state)
@@ -75,6 +81,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region UpdateState
+
         [HttpPut]
         public IActionResult UpdateState(StateModel state)
         {
@@ -111,6 +121,10 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating the record.", error = ex.Message });
             }
         }
+
+        #endregion
+
+        #region DeleteState
 
         [HttpDelete("{stateid}")]
         public IActionResult DeleteState(int stateid)
@@ -151,6 +165,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region GetAllStates
+
         [HttpGet]
         public IActionResult GetAllStates()
         {
@@ -190,7 +208,13 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the states.", error = ex.Message });
             }
         }
+
+        #endregion
+
+        #region GetStatesById
+
         [HttpGet("{stateid}")]
+
         public IActionResult GetStatesById(int stateid)
         {
             try
@@ -231,5 +255,7 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the state.", error = ex.Message });
             }
         }
+
+        #endregion
     }
 }

@@ -22,6 +22,8 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class VehicleBrandsController : ControllerBase
     {
+        #region IConfiguration
+
         private readonly IConfiguration _configuration;
         private readonly ILogger<VehicleBrandsController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -33,7 +35,9 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+        #endregion
 
+        #region GetRandomAlphanumericString
         private string GetRandomAlphanumericString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -42,6 +46,9 @@ namespace MyCarBuddy.API.Controllers
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
+        #endregion
+
+        #region InsertVehicleBrand
 
         [HttpPost("InsertVehicleBrand")]
 
@@ -125,6 +132,9 @@ namespace MyCarBuddy.API.Controllers
 
         }
 
+        #endregion
+
+        #region UpdateVehicleBrand
 
         [HttpPut("UpdateVehicleBrand")]
         public async Task<IActionResult> UpdateVehicleBrand([FromForm] VehicleBrandsModel vehiclebrands)
@@ -228,8 +238,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
 
-
+        #region GetAllVehicleBrands
 
         [HttpGet("GetVehicleBrands")]
 
@@ -278,6 +289,10 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region DeleteVehicleBrand
+
         [HttpDelete("brandid")]
         public IActionResult DeleteVehicleBrand(int brandid)
         {
@@ -322,6 +337,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+        #endregion
+
+        #region GetVehicleBrandsByID
 
         [HttpGet("vehiclebrandid")]
 
@@ -372,6 +390,8 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
+
+        #endregion
 
     }
 }

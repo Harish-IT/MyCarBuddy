@@ -23,6 +23,7 @@ namespace MyCarBuddy.API.Controllers
     [ApiController]
     public class TimeSlotController : ControllerBase
     {
+        #region IConfiguration
         private readonly IConfiguration _configuration;
         private readonly ILogger<TimeSlotController> _logger;
         private readonly IWebHostEnvironment _env;
@@ -34,6 +35,9 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
 
+        #endregion
+
+        #region TimeSlot Insert
 
         [HttpPost]
 
@@ -72,6 +76,11 @@ namespace MyCarBuddy.API.Controllers
 
             }
         }
+
+        #endregion
+
+        #region  UpdateTimeSlot
+
         [HttpPut]
 
         public IActionResult UpdateTimeSlot(TimeSlotModel timeupdate)
@@ -111,6 +120,8 @@ namespace MyCarBuddy.API.Controllers
             }
 
         }
+
+        #endregion
 
         #region GetListTimeSlot
 
@@ -158,7 +169,7 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
-        #region GetSkillById
+        #region GetTimeSlotById
 
         [HttpGet("timeslotid")]
 
@@ -208,7 +219,7 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-        #region DeleteSkill
+        #region DeleteTimeSlot
 
         [HttpDelete("timeslotId")]
 
