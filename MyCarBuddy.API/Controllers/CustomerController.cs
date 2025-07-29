@@ -246,6 +246,104 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { Success = false, Message = ex.Message });
             }
         }
+        #region Get Customer List
+
+        [HttpGet]
+
+        public IActionResult GetListCustomers()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_ListCustomerDetails", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            dict[col.ColumnName] = row[col];
+                        }
+                        Data.Add(dict);
+                    }
+                    return Ok(new { status = true, Data });
+                }
+            }
+            catch (Exception ex)
+            {
+
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Customers.", error = ex.Message });
+
+            }
+        }
+
+        #endregion
+
+
+        #region GetCustomersById
+
+
+        [HttpGet("Id")]
+
+        public IActionResult GetCustomersById(int Id)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetCustomerDetailsByID", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CustID", Id);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                }
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Customers not found" });
+                }
+                var Data = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    Data.Add(dict);
+                }
+                return Ok(Data.Count == 1 ? Data[0] : Data);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Customers.", error = ex.Message });
+
+            }
+
+        }
+
+        #endregion
+
+
 
     }
 }
