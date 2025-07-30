@@ -40,15 +40,16 @@ namespace MyCarBuddy.API.Controllers
 
         [HttpPost("InsertCustomerVehicle")]
 
-        public async  Task<IActionResult> InsertCustomerVehicle(CustomerVehiclesModel customervehiclemodel)
+        public async Task<IActionResult> InsertCustomerVehicle(CustomerVehiclesModel customervehiclemodel)
         {
             try
             {
-                using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using(SqlCommand cmd=new SqlCommand("sp_InsertCustomerVehicle",conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_InsertCustomerVehicle", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
+
                         cmd.Parameters.AddWithValue("@CustID", customervehiclemodel.CustID);
                         cmd.Parameters.AddWithValue("@VehicleNumber", customervehiclemodel.VehicleNumber);
                         cmd.Parameters.AddWithValue("@YearOfPurchase", customervehiclemodel.YearOfPurchase);
@@ -60,23 +61,39 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ModelID", customervehiclemodel.ModelID);
                         cmd.Parameters.AddWithValue("@FuelTypeID", customervehiclemodel.FuelTypeID);
 
+                        // Output parameter
+                        SqlParameter outputIdParam = new SqlParameter("@VehicleID", SqlDbType.Int)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        cmd.Parameters.Add(outputIdParam);
 
                         await conn.OpenAsync();
                         await cmd.ExecuteNonQueryAsync();
 
+                        int insertedVehicleId = (int)outputIdParam.Value;
+
+                        return Ok(new
+                        {
+                            status = true,
+                            message = "Vehicle inserted successfully.",
+                            VehicleID = insertedVehicleId
+                        });
                     }
-
-                    return Ok(new { status=true, message = "Vehicle inserted successfully." });
                 }
-
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { status = false, message = "An error occurred while inserting the record.", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    status = false,
+                    message = "An error occurred while inserting the record.",
+                    error = ex.Message
+                });
             }
-
         }
+
 
         #endregion
 
@@ -231,6 +248,52 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #endregion
+
+        [HttpGet("CustId")]
+        public IActionResult GetCustomerVehiclebyCustID(int CustId)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetCustomerVehiclebyCustID", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CustID", CustId);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader); // Load all columns and rows
+                        }
+                        conn.Close();
+                    }
+                }
+
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Customer vehicles not found" });
+                }
+
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+
+                return Ok(jsonResult.Count == 1 ? jsonResult[0] : jsonResult);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Fuel types.", error = ex.Message });
+            }
+        }
 
     }
 }

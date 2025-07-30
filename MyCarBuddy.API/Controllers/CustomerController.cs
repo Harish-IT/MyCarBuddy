@@ -199,8 +199,8 @@ namespace MyCarBuddy.API.Controllers
                 if (model.CustID <= 0)
                     return BadRequest(new { Success = false, Message = "Invalid customer ID" });
 
-                if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.PhoneNumber) || string.IsNullOrWhiteSpace(model.Email))
-                    return BadRequest(new { Success = false, Message = "Required fields missing" });
+                //if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.PhoneNumber) || string.IsNullOrWhiteSpace(model.Email))
+                //    return BadRequest(new { Success = false, Message = "Required fields missing" });
 
                 string profileImagePath = null;
                 if (model.ProfileImageFile != null)
@@ -326,10 +326,12 @@ namespace MyCarBuddy.API.Controllers
                     var dict = new Dictionary<string, object>();
                     foreach (DataColumn col in dt.Columns)
                     {
-                        dict[col.ColumnName] = row[col];
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
                     }
                     Data.Add(dict);
                 }
+
                 return Ok(Data.Count == 1 ? Data[0] : Data);
             }
             catch (Exception ex)
