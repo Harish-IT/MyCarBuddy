@@ -256,9 +256,6 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { Success = false, Message = "Internal server error." });
 
 
-              //  _logger.LogError(ex, HttpContext, _configuration, _logger);
-               // return StatusCode(500, new { message = "An error occurred while retrieving the times slot.", error = ex.Message });
-
             }
         }
 

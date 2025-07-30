@@ -191,6 +191,7 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
+
         [HttpPost("update-customer")]
         public async Task<IActionResult> UpdateCustomer([FromForm] CustomerModel model)
         {
@@ -233,10 +234,14 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ProfileImage", (object?)profileImagePath ?? DBNull.Value);
 
                         int rows = await cmd.ExecuteNonQueryAsync();
-                        if (rows > 0)
-                            return Ok(new { Success = true, Message = "Customer updated successfully" });
+                        if (rows == 0)
+                        {
+                            return Ok(new { Success = true, Message = "Customer updated (no changes detected)" });
+                        }
                         else
-                            return NotFound(new { Success = false, Message = "Customer not found or no changes made" });
+                        {
+                            return Ok(new { Success = true, Message = "Customer updated successfully" });
+                        }
                     }
                 }
             }
@@ -246,6 +251,8 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { Success = false, Message = ex.Message });
             }
         }
+
+
         #region Get Customer List
 
         [HttpGet]

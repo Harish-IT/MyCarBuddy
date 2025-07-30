@@ -32,7 +32,6 @@ namespace MyCarBuddy.API.Middleware
             {
                 _logger.LogError(ex, "An unhandled exception occurred");
 
-                // Save to DB
                 LogErrorToDatabase(ex, context);
 
                 // Return generic error response
