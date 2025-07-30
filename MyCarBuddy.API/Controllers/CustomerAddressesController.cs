@@ -296,5 +296,45 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
+        #region Primary Address
+
+
+        [HttpPost("primary-address")]
+        public IActionResult PrimaryAddress([FromQuery] int AddressId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    conn.Open(); // Ensure the connection is opened
+
+                    using (SqlCommand cmd = new SqlCommand("sp_SetPrimaryAddressByUser", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@AddressId", AddressId);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Address is updated as primary successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while Address is updated as primary.",
+                    error = ex.Message
+                });
+            }
+        }
+        #endregion
+
     }
 }

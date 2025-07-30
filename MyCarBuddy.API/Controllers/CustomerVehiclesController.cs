@@ -249,6 +249,8 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
+        #region GetCustomerVehiclebyCustID
+
         [HttpGet("CustId")]
         public IActionResult GetCustomerVehiclebyCustID(int CustId)
         {
@@ -294,6 +296,48 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the Fuel types.", error = ex.Message });
             }
         }
+
+        #endregion
+
+        #region primary vehicle
+
+        [HttpPost("primary-vehicle")]
+        public IActionResult PrimaryVehicle([FromQuery] int vehicleId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    conn.Open(); // Ensure the connection is opened
+
+                    using (SqlCommand cmd = new SqlCommand("sp_SetPrimaryVehicleByUser", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@VehicleID", vehicleId);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Vehicle primary status updated successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while updating primary vehicle.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #endregion
 
     }
 }
