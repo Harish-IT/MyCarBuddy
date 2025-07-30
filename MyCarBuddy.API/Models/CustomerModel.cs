@@ -5,25 +5,16 @@ namespace MyCarBuddy.API.Models
 {
     public class CustomerModel
     {
-<<<<<<< HEAD
-        public int?  CustID { get; set; }
-=======
-        
+        [BindNever]
         public int  CustID { get; set; }
->>>>>>> 473ed5a9cfd9e10fc0e00481349b67c9f1ce3d3e
 
         public string FullName {  get; set; }
         public string PhoneNumber {  get; set; }
         public string AlternateNumber { get; set; } = string.Empty;
         public string Email {  get; set; }
 
-<<<<<<< HEAD
-       
-        public string ProfileImage { get; set; }=string.Empty;
-=======
-        
+        [BindNever]
         public string ProfileImage {  get; set; }
->>>>>>> 473ed5a9cfd9e10fc0e00481349b67c9f1ce3d3e
 
         public IFormFile ProfileImageFile { get; set; }
         
