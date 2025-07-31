@@ -346,7 +346,7 @@ namespace MyCarBuddy.API.Controllers
                     jsonResult.Add(dict);
                 }
 
-                return Ok(jsonResult.Count == 1 ? jsonResult[0] : jsonResult);
+                return Ok(jsonResult);
             }
             catch (Exception ex)
             {

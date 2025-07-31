@@ -208,7 +208,7 @@ namespace MyCarBuddy.API.Controllers
                         }
                         conn.Close();
                     }
-                    var jsonResult = new List<Dictionary<string, object>>();
+                    var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
                     {
                         var dict = new Dictionary<string, object>();
@@ -216,9 +216,9 @@ namespace MyCarBuddy.API.Controllers
                         {
                             dict[col.ColumnName] = row[col];
                         }
-                        jsonResult.Add(dict);
+                        Data.Add(dict);
                     }
-                    return Ok(jsonResult);
+                    return Ok(Data);
                 }
             }
             catch(Exception ex)
@@ -259,7 +259,7 @@ namespace MyCarBuddy.API.Controllers
                 {
                     return NotFound(new { message = "Skills not found" });
                 }
-                var jsonResult = new List<Dictionary<string, object>>();
+                var Data = new List<Dictionary<string, object>>();
                 foreach (DataRow row in dt.Rows)
                 {
                     var dict = new Dictionary<string, object>();
@@ -267,9 +267,9 @@ namespace MyCarBuddy.API.Controllers
                     {
                         dict[col.ColumnName] = row[col];
                     }
-                    jsonResult.Add(dict);
+                    Data.Add(dict);
                 }
-                return Ok(jsonResult.Count == 1 ? jsonResult[0] : jsonResult);
+                return Ok(Data);
             }
             catch (Exception ex)
             {

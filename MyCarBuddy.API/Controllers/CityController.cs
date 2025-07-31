@@ -203,7 +203,7 @@ namespace MyCarBuddy.API.Controllers
                     Data.Add(dict);
                 }
 
-                return Ok(Data.Count == 1 ? Data[0] : Data);
+                return Ok(Data);
             }
             catch (Exception ex)
             {
@@ -252,7 +252,7 @@ namespace MyCarBuddy.API.Controllers
                     Data.Add(dict);
                 }
 
-                return Ok(Data.Count == 1 ? Data[0] : Data);
+                return Ok(Data);
             }
             catch (Exception ex)
             {

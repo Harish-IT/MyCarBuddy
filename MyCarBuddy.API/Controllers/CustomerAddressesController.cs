@@ -190,7 +190,7 @@ namespace MyCarBuddy.API.Controllers
             {
 
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the Includes.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the Address.", error = ex.Message });
 
             }
         }
@@ -235,7 +235,7 @@ namespace MyCarBuddy.API.Controllers
                     }
                     Data.Add(dict);
                 }
-                return Ok(Data.Count == 1 ? Data[0] : Data);
+                return Ok(Data);
             }
             catch (Exception ex)
             {
@@ -288,12 +288,12 @@ namespace MyCarBuddy.API.Controllers
                     }
                     Data.Add(dict);
                 }
-                return Ok(Data.Count == 1 ? Data[0] : Data);
+                return Ok(Data);
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the Includes.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the Address.", error = ex.Message });
 
             }
 

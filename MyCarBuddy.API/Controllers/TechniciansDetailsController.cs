@@ -545,7 +545,7 @@ namespace MyCarBuddy.API.Controllers
                 return Ok(new
                 {
                     status = true,
-                    data = jsonResult.Count == 1 ? jsonResult[0] : (object)jsonResult
+                    data = jsonResult
                 });
             }
             catch (Exception ex)
