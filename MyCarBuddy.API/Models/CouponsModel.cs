@@ -16,6 +16,8 @@ namespace MyCarBuddy.API.Models
         public bool? IsActive { get; set; }
         public int? CreatedBy {  get; set; }
         public int? ModifiedBy { get; set; }
+         public decimal? MaxDisAmount { get; set; }
+        public decimal? MinBookingAmount { get; set; }
     }
 
     public class UpdateCoupon
@@ -31,6 +33,8 @@ namespace MyCarBuddy.API.Models
         public bool? IsActive { get; set; }
         public int? CreatedBy { get; set; }
         public int? ModifiedBy { get; set; }
+        public decimal? MaxDisAmount { get; set; }
+        public decimal? MinBookingAmount { get; set; }
 
     }
 

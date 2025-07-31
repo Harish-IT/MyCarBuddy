@@ -197,13 +197,12 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
-
         #region AddressId
 
 
         [HttpGet("addressid")]
 
-        public IActionResult GetSubCategory1ById(int addressid)
+        public IActionResult GetAddressById(int addressid)
         {
             try
             {
@@ -224,7 +223,7 @@ namespace MyCarBuddy.API.Controllers
                 }
                 if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "Includes not found.." });
+                    return NotFound(new { message = "Address not found.." });
                 }
                 var Data = new List<Dictionary<string, object>>();
                 foreach (DataRow row in dt.Rows)
@@ -250,7 +249,59 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
-        #region includeid
+
+        #region CustID
+
+
+        [HttpGet("custid")]
+
+        public IActionResult GetAddessByCustId(int custid)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("SP_GetCustomerAddresses", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CustID ", custid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                }
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Address not found.." });
+                }
+                var Data = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    Data.Add(dict);
+                }
+                return Ok(Data.Count == 1 ? Data[0] : Data);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Includes.", error = ex.Message });
+
+            }
+
+        }
+
+        #endregion
+
+        #region delete addressid
 
         [HttpDelete("addressid")]
 

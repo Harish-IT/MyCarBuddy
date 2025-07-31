@@ -57,6 +57,9 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@MaxUsagePerUser", coupons.MaxUsagePerUser ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@IsActive", coupons.IsActive ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@CreatedBy", coupons.CreatedBy ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@MaxDisAmount", coupons.MaxDisAmount ?? 0);
+                        cmd.Parameters.AddWithValue("@MinBookingAmount", coupons.MinBookingAmount ?? 0);
+
 
                         conn.Open();
                         cmd.ExecuteNonQuery();
@@ -82,32 +85,33 @@ namespace MyCarBuddy.API.Controllers
 
             try
             {
-               
-                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateCoupons", conn))
                     {
-                        using (SqlCommand cmd = new SqlCommand("sp_UpdateCoupons", conn))
-                        {
-                            cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.CommandType = CommandType.StoredProcedure;
 
-                            cmd.Parameters.AddWithValue("@CouponID", coupons.CouponID ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@Code", coupons.Code ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@Description", coupons.Description ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@DiscountType", coupons.DiscountType ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@DiscountValue", coupons.DiscountValue);
-                            cmd.Parameters.AddWithValue("@ValidFrom", coupons.ValidFrom);
-                            cmd.Parameters.AddWithValue("@ValidTill", coupons.ValidTill);
-                            cmd.Parameters.AddWithValue("@MaxUsagePerUser", coupons.MaxUsagePerUser ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@IsActive", coupons.IsActive ?? (object)DBNull.Value);
-                            cmd.Parameters.AddWithValue("@ModifiedBy", coupons.ModifiedBy ?? (object)DBNull.Value);
-
-                            conn.Open();
-                            cmd.ExecuteNonQuery();
-                        }
+                        cmd.Parameters.AddWithValue("@CouponID", coupons.CouponID ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Code", coupons.Code ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Description", coupons.Description ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@DiscountType", coupons.DiscountType ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@DiscountValue", coupons.DiscountValue);
+                        cmd.Parameters.AddWithValue("@ValidFrom", coupons.ValidFrom);
+                        cmd.Parameters.AddWithValue("@ValidTill", coupons.ValidTill);
+                        cmd.Parameters.AddWithValue("@MaxUsagePerUser", coupons.MaxUsagePerUser ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@IsActive", coupons.IsActive ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ModifiedBy", coupons.ModifiedBy ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@MaxDisAmount", coupons.MaxDisAmount.HasValue ? coupons.MaxDisAmount.Value : (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@MinBookingAmount", coupons.MinBookingAmount.HasValue ? coupons.MinBookingAmount.Value : (object)DBNull.Value);
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
                     }
+                }
 
-                    return Ok(new { message = "Coupon updated successfully." });
-                
-               
+                return Ok(new { message = "Coupon updated successfully." });
+
+
             }
             catch (Exception ex)
             {

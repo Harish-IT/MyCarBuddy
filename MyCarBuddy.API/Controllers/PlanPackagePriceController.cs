@@ -99,8 +99,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ModelID", planpricepackage.ModelID ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@FuelTypeID", planpricepackage.FuelTypeID ?? (object)DBNull.Value);
                         cmd.Parameters.AddWithValue("@PackageID", planpricepackage.PackageID ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Description", planpricepackage.Description ?? "");
-                        cmd.Parameters.AddWithValue("@EstimatedDurationMinutes", planpricepackage.EstimatedDurationMinutes ?? 0);
+                       
                         cmd.Parameters.AddWithValue("@ImageURL", imageurlpath ?? "");
                         cmd.Parameters.AddWithValue("@IsActive", planpricepackage.IsActive ?? true);
                         cmd.Parameters.AddWithValue("@Serv_Reg_Price", planpricepackage.Serv_Reg_Price);
@@ -205,8 +204,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ModelID", planpricepackage.ModelID ?? 0);
                         cmd.Parameters.AddWithValue("@FuelTypeID", planpricepackage.FuelTypeID ?? 0);
                         cmd.Parameters.AddWithValue("@PackageID", planpricepackage.PackageID ?? 0);
-                        cmd.Parameters.AddWithValue("@Description", planpricepackage.Description ?? "");
-                        cmd.Parameters.AddWithValue("@EstimatedDurationMinutes", planpricepackage.EstimatedDurationMinutes ?? 0);
+                      
                         cmd.Parameters.AddWithValue("@ImageURL", imageUrlpath);
                         cmd.Parameters.AddWithValue("@IsActive", planpricepackage.IsActive ?? true);
                         cmd.Parameters.AddWithValue("@Serv_Reg_Price", planpricepackage.Serv_Reg_Price);

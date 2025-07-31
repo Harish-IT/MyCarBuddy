@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MyCarBuddy.API.Models;
+using MyCarBuddy.API.Utilities;
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -11,6 +13,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
 
 namespace MyCarBuddy.API.Controllers
 {
@@ -110,6 +113,8 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
                     cmd.Parameters.AddWithValue("@Status", model.Status);
                     cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
+                    cmd.Parameters.AddWithValue("@Description",model.Description??(object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@EstimatedDurationMinutes",model.EstimatedDurationMinutes ?? (object)DBNull.Value);
 
                     conn.Open();
                     var newId = cmd.ExecuteScalar();
@@ -132,39 +137,42 @@ namespace MyCarBuddy.API.Controllers
         [HttpGet("GetPlanPackagesDetails")]
         public IActionResult GetPlanPackagesDetails()
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            List<PlanPackageDTO> packages = new List<PlanPackageDTO>();
-
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            try
             {
-                SqlCommand cmd = new SqlCommand("SP_GetPlanPackagesDetails", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                conn.Open();
-                SqlDataReader reader = cmd.ExecuteReader();
-
-                while (reader.Read())
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    packages.Add(new PlanPackageDTO
+                    using (SqlCommand cmd = new SqlCommand("SP_GetPlanPackagesDetails", conn))
                     {
-                        PackageID = Convert.ToInt32(reader["PackageID"]),
-                        PackageName = reader["PackageName"].ToString(),
-                        CategoryID = Convert.ToInt32(reader["CategoryID"]),
-                        CategoryName = reader["CategoryName"].ToString(),
-                        SubCategoryID = Convert.ToInt32(reader["SubCategoryID"]),
-                        SubCategoryName = reader["SubCategoryName"].ToString(),
-                        IncludeID = reader["IncludeID"].ToString(),
-                        IncludeNames = reader["IncludeNames"].ToString(),
-                        IncludePrices = reader["IncludePrices"].ToString(),
-                        PackageImage = reader["PackageImage"].ToString(),
-                        BannerImage = reader["BannerImage"].ToString(),
-                        IsActive = Convert.ToBoolean(reader["IsActive"])
-                    });
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader); // Load entire result into DataTable
+                        }
+                        conn.Close();
+                    }
                 }
-                conn.Close();
-            }
 
-            return Ok(packages);
+                // Convert DataTable to a JSON-friendly List<Dictionary<string, object>>
+                var jsonResult = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    jsonResult.Add(dict);
+                }
+
+                return Ok(jsonResult);
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the plan packages.", error = ex.Message });
+            }
         }
 
         #endregion
@@ -262,6 +270,11 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@Status", model.Status);
                     cmd.Parameters.AddWithValue("@ModifiedBy", model.ModifiedBy);
 
+                    cmd.Parameters.AddWithValue("@Description",
+                        string.IsNullOrWhiteSpace(model.Description) ? DBNull.Value : model.Description);
+
+                    cmd.Parameters.AddWithValue("@EstimatedDurationMinutes",
+                        model.EstimatedDurationMinutes.HasValue ? model.EstimatedDurationMinutes.Value : DBNull.Value);
                     conn.Open();
                     cmd.ExecuteNonQuery();
                     conn.Close();
@@ -280,48 +293,46 @@ namespace MyCarBuddy.API.Controllers
 
         #region GetPlanPackageDetailsByID
 
-
         [HttpGet("GetPlanPackageDetailsByID/{id}")]
         public IActionResult GetPlanPackageDetailsByID(int id)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            PlanPackageDTO package = null;
-
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            try
             {
-                SqlCommand cmd = new SqlCommand("SP_GetPlanPackageDetailsByID", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@PackageID", id);
-
-                conn.Open();
-                SqlDataReader reader = cmd.ExecuteReader();
-
-                if (reader.Read())
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    package = new PlanPackageDTO
+                    using (SqlCommand cmd = new SqlCommand("SP_GetPlanPackageDetailsByID", conn))
                     {
-                        PackageID = Convert.ToInt32(reader["PackageID"]),
-                        PackageName = reader["PackageName"].ToString(),
-                        CategoryID = Convert.ToInt32(reader["CategoryID"]),
-                        CategoryName = reader["CategoryName"].ToString(),
-                        SubCategoryID = Convert.ToInt32(reader["SubCategoryID"]),
-                        SubCategoryName = reader["SubCategoryName"].ToString(),
-                        IncludeID = reader["IncludeID"].ToString(),
-                        IncludeNames = reader["IncludeNames"].ToString(),
-                        IncludePrices = reader["IncludePrices"].ToString(),
-                        PackageImage = reader["PackageImage"].ToString(),
-                        BannerImage = reader["BannerImage"].ToString(),
-                        IsActive = Convert.ToBoolean(reader["IsActive"]),
-                        TotalPrice = Convert.ToDecimal(reader["TotalPrice"])
-                    };
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@PackageID", id);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader); // Load the result into DataTable
+                        }
+                        conn.Close();
+                    }
                 }
-                conn.Close();
+
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Plan package not found" });
+                }
+
+                // Convert first DataRow to Dictionary<string, object>
+                var result = new Dictionary<string, object>();
+                foreach (DataColumn col in dt.Columns)
+                {
+                    result[col.ColumnName] = dt.Rows[0][col];
+                }
+
+                return Ok(result);
             }
-
-            if (package == null)
-                return NotFound();
-
-            return Ok(package);
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the plan package.", error = ex.Message });
+            }
         }
 
         #endregion
@@ -330,63 +341,61 @@ namespace MyCarBuddy.API.Controllers
 
         [HttpGet("GetPlanPackagesByCategoryAndSubCategory")]
         public IActionResult GetPlanPackagesByCategoryAndSubCategory(
-      [FromQuery] int? categoryId,
-      [FromQuery] int? subCategoryId,
-      [FromQuery] int? BrandID,
-      [FromQuery] int? ModelID,
-      [FromQuery] int? FuelTypeID)
+            [FromQuery] int? categoryId,
+            [FromQuery] int? subCategoryId,
+            [FromQuery] int? BrandID,
+            [FromQuery] int? ModelID,
+            [FromQuery] int? FuelTypeID)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            List<PlanPackageDTO> packages = new List<PlanPackageDTO>();
-
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            try
             {
-                using (SqlCommand cmd = new SqlCommand("SP_GetPlanPackageDetailsByCateSubCateID", conn))
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-
-                    // Null-safe parameters
-                    cmd.Parameters.AddWithValue("@CategoryID", categoryId ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@SubCategoryID", subCategoryId ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@BrandID", BrandID ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@ModelID", ModelID ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@FuelTypeID", FuelTypeID ?? (object)DBNull.Value);
-
-                    conn.Open();
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (SqlCommand cmd = new SqlCommand("SP_GetPlanPackageDetailsByCateSubCateID", conn))
                     {
-                        while (reader.Read())
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CategoryID", categoryId ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@SubCategoryID", subCategoryId ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@BrandID", BrandID ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ModelID", ModelID ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@FuelTypeID", FuelTypeID ?? (object)DBNull.Value);
+
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            packages.Add(new PlanPackageDTO
-                            {
-                                PackageID = reader["PackageID"] != DBNull.Value ? Convert.ToInt32(reader["PackageID"]) : 0,
-                                PackageName = reader["PackageName"]?.ToString(),
-                                CategoryID = reader["CategoryID"] != DBNull.Value ? Convert.ToInt32(reader["CategoryID"]) : 0,
-                                CategoryName = reader["CategoryName"]?.ToString(),
-                                SubCategoryID = reader["SubCategoryID"] != DBNull.Value ? Convert.ToInt32(reader["SubCategoryID"]) : 0,
-                                SubCategoryName = reader["SubCategoryName"]?.ToString(),
-                                IncludeID = reader["IncludeID"]?.ToString(),
-                                IncludeNames = reader["IncludeNames"]?.ToString(),
-                                IncludePrices = reader["IncludePrices"]?.ToString(),
-                                PackageImage = reader["PackageImage"]?.ToString(),
-                                BannerImage = reader["BannerImage"]?.ToString(),
-                                IsActive = reader["IsActive"] != DBNull.Value && Convert.ToBoolean(reader["IsActive"]),
-                                Serv_Off_Price = reader["Serv_Off_Price"] != DBNull.Value ? Convert.ToDecimal(reader["Serv_Off_Price"]) : 0,
-                                Serv_Reg_Price = reader["Serv_Reg_Price"] != DBNull.Value ? Convert.ToDecimal(reader["Serv_Reg_Price"]) : 0
-                            });
+                            dt.Load(reader); // Load result into DataTable
                         }
+                        conn.Close();
                     }
                 }
+
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "No packages found for the given filters." });
+                }
+
+                // Convert DataTable to List<Dictionary<string, object>>
+                var resultList = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    resultList.Add(dict);
+                }
+
+                return Ok(resultList);
             }
-
-            if (packages.Count == 0)
-                return NotFound();
-
-            return Ok(packages);
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving packages.", error = ex.Message });
+            }
         }
 
         #endregion
-
-
     }
 }

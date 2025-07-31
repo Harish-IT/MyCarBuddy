@@ -6,7 +6,7 @@ namespace MyCarBuddy.API.Models
 {
     public class PlanPackageModel
     {
-        public int PackageID { get; set; }
+        public int? PackageID { get; set; }
         public string PackageName { get; set; }
         public int CategoryID { get; set; }
         public int SubCategoryID { get; set; }
@@ -15,11 +15,14 @@ namespace MyCarBuddy.API.Models
         public List<IFormFile> BannerImages { get; set; } // for multiple
         public decimal TotalPrice { get; set; }
         public int Status { get; set; }
-        public int CreatedBy { get; set; }
-        public int ModifiedBy { get; set; }
+        public int? CreatedBy { get; set; }
+        public int? ModifiedBy { get; set; }
 
         public string ExistingPackageImage { get; set; }
         public string ExistingBannerImages { get; set; }
+
+        public string Description { get; set; } = string.Empty;
+        public int? EstimatedDurationMinutes { get; set; }
     }
 
     public class PlanPackageDTO
@@ -41,6 +44,8 @@ namespace MyCarBuddy.API.Models
         public decimal Serv_Off_Price { get; set; }
 
         public decimal Serv_Reg_Price { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public int? EstimatedDurationMinutes { get; set; }
     }
 
 }
