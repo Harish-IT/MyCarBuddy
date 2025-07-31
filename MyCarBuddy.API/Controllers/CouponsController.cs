@@ -142,17 +142,30 @@ namespace MyCarBuddy.API.Controllers
                         }
                         conn.Close();
                     }
-                    var jsonResult = new List<Dictionary<string, object>>();
+
+
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "Coupons not found" });
+                    }
+                    var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
                     {
                         var dict = new Dictionary<string, object>();
                         foreach (DataColumn col in dt.Columns)
                         {
-                            dict[col.ColumnName] = row[col];
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
                         }
-                        jsonResult.Add(dict);
+                        Data.Add(dict);
                     }
-                    return Ok(jsonResult);
+
+                    return Ok(Data.Count == 1 ? Data[0] : Data);
+
+
+
+                  
                 }
             }
             catch (Exception ex)
@@ -190,21 +203,32 @@ namespace MyCarBuddy.API.Controllers
                         conn.Close();
                     }
                 }
+
+
+
+
                 if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "Coupons List  not found" });
+                    return NotFound(new { message = "Coupons not found" });
                 }
-                var jsonResult = new List<Dictionary<string, object>>();
+                var Data = new List<Dictionary<string, object>>();
                 foreach (DataRow row in dt.Rows)
                 {
                     var dict = new Dictionary<string, object>();
                     foreach (DataColumn col in dt.Columns)
                     {
-                        dict[col.ColumnName] = row[col];
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
                     }
-                    jsonResult.Add(dict);
+                    Data.Add(dict);
                 }
-                return Ok(jsonResult.Count == 1 ? jsonResult[0] : jsonResult);
+
+                return Ok(Data.Count == 1 ? Data[0] : Data);
+
+
+
+
+
             }
             catch (Exception ex)
             {

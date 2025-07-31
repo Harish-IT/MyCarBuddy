@@ -314,17 +314,24 @@ namespace MyCarBuddy.API.Controllers
                         }
                         conn.Close();
                     }
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "Categories not found" });
+                    }
                     var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
                     {
                         var dict = new Dictionary<string, object>();
                         foreach (DataColumn col in dt.Columns)
                         {
-                            dict[col.ColumnName] = row[col];
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
                         }
                         Data.Add(dict);
                     }
-                    return Ok(new { status = true, Data });
+
+                    return Ok(Data.Count == 1 ? Data[0] : Data);
                 }
             }
             catch (Exception ex)
@@ -362,22 +369,24 @@ namespace MyCarBuddy.API.Controllers
                         }
                         conn.Close();
                     }
-                }
-                if (dt.Rows.Count == 0)
-                {
-                    return NotFound(new { message = "Category not found" });
-                }
-                var Data = new List<Dictionary<string, object>>();
-                foreach (DataRow row in dt.Rows)
-                {
-                    var dict = new Dictionary<string, object>();
-                    foreach (DataColumn col in dt.Columns)
+                    if (dt.Rows.Count == 0)
                     {
-                        dict[col.ColumnName] = row[col];
+                        return NotFound(new { message = "Category not found" });
                     }
-                    Data.Add(dict);
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                        }
+                        Data.Add(dict);
+                    }
+
+                    return Ok(Data.Count == 1 ? Data[0] : Data);
                 }
-                return Ok(Data.Count == 1 ? Data[0] : Data);
             }
             catch (Exception ex)
             {
@@ -392,6 +401,7 @@ namespace MyCarBuddy.API.Controllers
 
 
         #region DeleteCategory
+
         [HttpDelete("categoryid")]
 
         public IActionResult DeleteCategory(int categoryid)

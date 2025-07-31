@@ -113,17 +113,24 @@ namespace MyCarBuddy.API.Controllers
                         }
                         conn.Close();
                     }
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "Cancellations not found" });
+                    }
                     var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
                     {
                         var dict = new Dictionary<string, object>();
                         foreach (DataColumn col in dt.Columns)
                         {
-                            dict[col.ColumnName] = row[col];
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
                         }
                         Data.Add(dict);
                     }
-                    return Ok(new { status = true, Data });
+
+                    return Ok(Data.Count == 1 ? Data[0] : Data);
                 }
             }
             catch (Exception ex)
@@ -145,31 +152,37 @@ namespace MyCarBuddy.API.Controllers
             try
             {
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlCommand cmd = new SqlCommand("sp_GetCancellationDetailsByID", conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_GetCancellationDetailsByID", conn))
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CancelID", cancelId);
+                    cmd.Parameters.AddWithValue("@BookingID", bookingId);
+
+                    conn.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CancelID", cancelId);
-                        cmd.Parameters.AddWithValue("@BookingID", bookingId);
-
-                        conn.Open();
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        if (reader.Read())
                         {
-                            if (reader.Read())
-                            {
-                                var result = new Dictionary<string, object>();
+                            var result = new Dictionary<string, object>();
 
-                                for (int i = 0; i < reader.FieldCount; i++)
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                object value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+
+                                // Convert empty strings to null
+                                if (value is string str && string.IsNullOrWhiteSpace(str))
                                 {
-                                    result.Add(reader.GetName(i), reader.IsDBNull(i) ? null : reader.GetValue(i));
+                                    value = null;
                                 }
 
-                                return Ok(new { status = true, data = result });
+                                result.Add(reader.GetName(i), value);
                             }
-                            else
-                            {
-                                return NotFound(new { status = false, message = "Cancellation details not found." });
-                            }
+
+                            return Ok(new { status = true, data = result });
+                        }
+                        else
+                        {
+                            return NotFound(new { status = false, message = "Cancellation details not found." });
                         }
                     }
                 }
@@ -185,7 +198,6 @@ namespace MyCarBuddy.API.Controllers
                 });
             }
         }
-
         #endregion
 
 
