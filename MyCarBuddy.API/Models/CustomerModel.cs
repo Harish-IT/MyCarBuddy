@@ -5,8 +5,7 @@ namespace MyCarBuddy.API.Models
 {
     public class CustomerModel
     {
-        [BindNever]
-        public int  CustID { get; set; }
+        public int?  CustID { get; set; }
 
         public string FullName {  get; set; }
         public string PhoneNumber {  get; set; }
