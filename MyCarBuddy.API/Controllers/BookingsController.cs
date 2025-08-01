@@ -200,7 +200,6 @@ namespace MyCarBuddy.API.Controllers
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@BookingID", model.BookingID);
                         cmd.Parameters.AddWithValue("@TechID", model.TechID);
-
                         await cmd.ExecuteNonQueryAsync();
                     }
                 }
@@ -272,7 +271,7 @@ namespace MyCarBuddy.API.Controllers
 
         [HttpGet("Id")]
 
-        public IActionResult GetBookingsById(int id )
+        public IActionResult GetBookingsById(int id)
         {
             try
             {
@@ -319,6 +318,60 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #endregion
+
+        #region TechniciansBookings By Id
+
+
+        [HttpGet("GetAssignedBookings")]
+
+        public IActionResult GetAssignedBookings([FromQuery] int Id)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetTechnicianAssignedBookings", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechID", Id);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                }
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Aggsign Bookings not found" });
+                }
+                var Data = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                    }
+                    Data.Add(dict);
+                }
+
+                return Ok(Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving  Assigned Bookings.");
+                return StatusCode(500, new { Success = false, Message = "Internal server error." });
+            }
+
+        }
+
+        #endregion
+
+
 
     }
 }

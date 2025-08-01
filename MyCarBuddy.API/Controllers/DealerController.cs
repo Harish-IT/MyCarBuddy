@@ -190,8 +190,7 @@ namespace MyCarBuddy.API.Controllers
         #region GetAllDealer
 
         [HttpGet]
-
-        public IActionResult GetAllDealer()
+        public IActionResult GetAllDealer([FromQuery] int? DistributorID = null)
         {
             try
             {
@@ -201,37 +200,44 @@ namespace MyCarBuddy.API.Controllers
                     using (SqlCommand cmd = new SqlCommand("sp_ListDealers", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
+
+                        // If DistributorID is provided, pass the value; otherwise pass DBNull
+                        cmd.Parameters.AddWithValue("@DistributorID", (object?)DistributorID ?? DBNull.Value);
+
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             dt.Load(reader);
                         }
-                        conn.Close();
                     }
-                    var Data = new List<Dictionary<string, object>>();
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        var dict = new Dictionary<string, object>();
-                        foreach (DataColumn col in dt.Columns)
-                        {
-                            dict[col.ColumnName] = row[col];
-                        }
-                        Data.Add(dict);
-                    }
-                    return Ok(Data);
                 }
+
+                // Convert DataTable to List<Dictionary<string, object>>
+                var data = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    data.Add(dict);
+                }
+
+                return Ok(data);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the dealer.", error = ex.Message });
-
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while retrieving the dealer.",
+                    error = ex.Message
+                });
             }
         }
 
         #endregion
-
         #region GetDealerById
 
         [HttpGet("dealerid")]
