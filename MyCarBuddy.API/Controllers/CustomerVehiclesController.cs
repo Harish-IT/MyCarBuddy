@@ -183,7 +183,8 @@ namespace MyCarBuddy.API.Controllers
                     var dict = new Dictionary<string, object>();
                     foreach (DataColumn col in dt.Columns)
                     {
-                        dict[col.ColumnName] = row[col];
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
                     }
                     Data.Add(dict);
                 }
@@ -283,7 +284,8 @@ namespace MyCarBuddy.API.Controllers
                     var dict = new Dictionary<string, object>();
                     foreach (DataColumn col in dt.Columns)
                     {
-                        dict[col.ColumnName] = row[col];
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
                     }
                     Data.Add(dict);
                 }
