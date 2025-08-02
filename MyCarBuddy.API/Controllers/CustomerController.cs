@@ -115,6 +115,11 @@ namespace MyCarBuddy.API.Controllers
             using SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
             conn.Open();
 
+            if (phoneNumber.Length == 10)
+                phoneNumber = "91" + phoneNumber;
+            else if (!phoneNumber.StartsWith("91") || phoneNumber.Length != 12)
+                return BadRequest(new { Success = false, Message = "Invalid phone number" });
+
             using SqlCommand cmd = new SqlCommand("SP_VerifyCustomerOTPTemp", conn);
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@LoginId", phoneNumber);
