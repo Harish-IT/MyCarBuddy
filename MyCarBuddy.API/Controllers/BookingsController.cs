@@ -378,6 +378,60 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
+        #region AssignedBookingsFetchByDate
+
+        [HttpGet("GetAssignedBookingsByDate")]
+        public IActionResult GetAssignedBookingsByDate( [FromQuery] int TechID,[FromQuery] DateTime FromDate,[FromQuery] DateTime ToDate)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_AssingedBokingsFetchByDate", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechID", TechID);
+                        cmd.Parameters.AddWithValue("@FromDate", FromDate);
+                        cmd.Parameters.AddWithValue("@ToDate", ToDate);
+
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                    }
+                }
+
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { Success = false, Message = "Assigned bookings not found." });
+                }
+
+                var Data = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                    }
+                    Data.Add(dict);
+                }
+
+                return Ok(new { Success = true, Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Assigned Bookings.");
+                return StatusCode(500, new { Success = false, Message = "Internal server error." });
+            }
+        }
+
+        #endregion
+
 
     }
 }
