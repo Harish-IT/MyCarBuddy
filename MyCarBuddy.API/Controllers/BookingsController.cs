@@ -403,7 +403,6 @@ namespace MyCarBuddy.API.Controllers
                         }
                     }
                 }
-
                 if (dt.Rows.Count == 0)
                 {
                     return NotFound(new { Success = false, Message = "Assigned bookings not found." });
