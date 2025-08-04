@@ -206,6 +206,12 @@ namespace MyCarBuddy.API.Controllers
 
                 return Ok(new { Success = true, Message = "Technician assigned successfully." });
             }
+            catch (SqlException sqlEx)
+            {
+                // This will capture RAISERROR messages from SQL Server
+                _logger.LogError(sqlEx, "SQL Error assigning technician.");
+                return BadRequest(new { Success = false, Message = sqlEx.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error assigning technician.");
