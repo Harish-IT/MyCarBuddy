@@ -48,10 +48,13 @@ namespace MyCarBuddy.API.Controllers
 
                     return Ok(new
                     {
+
                         Success = true,
+                        TechId = techId,
                         Token = token,
                         Name = reader["FullName"],
                         Email = reader["Email"]
+                        
                     });
                 }
                 else
