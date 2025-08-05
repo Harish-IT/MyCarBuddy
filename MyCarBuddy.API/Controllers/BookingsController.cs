@@ -1,21 +1,24 @@
-﻿using GSF.ErrorManagement;
+﻿using Braintree;
+using GSF;
+using GSF.ErrorManagement;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic.CompilerServices;
 using MyCarBuddy.API.Models;
+using MyCarBuddy.API.Utilities;
+using Razorpay.Api;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
-using System.Threading.Tasks;
-using MyCarBuddy.API.Utilities;
-using GSF;
-using Braintree;
-using Microsoft.AspNetCore.Authorization;
 using System.Linq;
+using System.Threading.Tasks;
 
 
 namespace MyCarBuddy.API.Controllers
@@ -431,6 +434,209 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
+
+
+        public static class Utils
+        {
+            public static string GetHash(string message, string secret)
+            {
+                var encoding = new System.Text.UTF8Encoding();
+                byte[] keyByte = encoding.GetBytes(secret);
+                byte[] messageBytes = encoding.GetBytes(message);
+                using (var hmacsha256 = new System.Security.Cryptography.HMACSHA256(keyByte))
+                {
+                    byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
+                    return BitConverter.ToString(hashmessage).Replace("-", "").ToLower();
+                }
+            }
+        }
+
+
+        //[HttpPost("create-order")]
+        //public IActionResult CreateOrder([FromBody] RazorOrderRequest model)
+        //{
+        //    string key = _configuration["Razorpay:Key"];
+        //    string secret = _configuration["Razorpay:Secret"];
+
+        //    RazorpayClient client = new RazorpayClient(key, secret);
+
+        //    Dictionary<string, object> options = new Dictionary<string, object>
+        //{
+        //    { "amount", model.Amount * 100 },
+        //    { "currency", "INR" },
+        //    { "receipt", model.BookingId.ToString() },
+        //    { "payment_capture", 1 }
+        //};
+
+        //    Razorpay.Api.Order order = client.Order.Create(options);
+
+        //    return Ok(new
+        //    {
+        //        success = true,
+        //        orderId = order["id"].ToString(),
+        //        key = key
+        //    });
+        //}
+
+        //[HttpPost("confirm-Payment")]
+        //public IActionResult ConfirmPayment([FromBody] RazorpayPaymentRequest paymentRequest)
+        //{
+        //    string secret = _configuration["Razorpay:Secret"];
+
+        //    string expectedSignature = Utils.GetHash($"{paymentRequest.RazorpayOrderId}|{paymentRequest.RazorpayPaymentId}", secret);
+
+        //    if (expectedSignature != paymentRequest.RazorpaySignature)
+        //    {
+        //        return BadRequest(new
+        //        {
+        //            success = false,
+        //            message = "Signature verification failed"
+        //        });
+        //    }
+
+        //    try
+        //    {
+        //        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+        //        {
+        //            conn.Open();
+        //            using (SqlCommand cmd = new SqlCommand("SP_InsertPaymentDetails", conn))
+        //            {
+        //                cmd.CommandType = CommandType.StoredProcedure;
+
+        //                cmd.Parameters.AddWithValue("@BookingID", paymentRequest.BookingID);
+        //                cmd.Parameters.AddWithValue("@AmountPaid", paymentRequest.AmountPaid);
+        //                cmd.Parameters.AddWithValue("@PaymentMode", "Razorpay");
+        //                cmd.Parameters.AddWithValue("@TransactionID", paymentRequest.RazorpayPaymentId);
+        //                cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
+        //                cmd.Parameters.AddWithValue("@IsRefunded", 0);
+
+        //                int result = cmd.ExecuteNonQuery();
+
+        //                if (result <= 0)
+        //                {
+        //                    return StatusCode(500, new
+        //                    {
+        //                        success = false,
+        //                        message = "Failed to save payment details"
+        //                    });
+        //                }
+        //            }
+        //        }
+
+        //        return Ok(new
+        //        {
+        //            success = true,
+        //            message = "Payment confirmed and saved successfully",
+        //            data = new
+        //            {
+        //                bookingId = paymentRequest.BookingID,
+        //                transactionId = paymentRequest.RazorpayPaymentId,
+        //                amountPaid = paymentRequest.AmountPaid,
+        //                paymentMode = "Razorpay",
+        //                paymentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+        //            }
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new
+        //        {
+        //            success = false,
+        //            message = "Server error",
+        //            error = ex.Message
+        //        });
+        //    }
+        //}
+
+
+        [HttpPost("process-payment")]
+        public IActionResult ProcessPayment([FromBody] RazorCombinedPaymentRequest model)
+        {
+            string key = _configuration["Razorpay:Key"];
+            string secret = _configuration["Razorpay:Secret"];
+
+            try
+            {
+                // Step 1: Create Razorpay Order
+                RazorpayClient client = new RazorpayClient(key, secret);
+
+                Dictionary<string, object> options = new Dictionary<string, object>
+        {
+            { "amount", model.Amount * 100 }, // Convert to paise
+            { "currency", "INR" },
+            { "receipt", model.BookingID.ToString() },
+            { "payment_capture", 1 }
+        };
+
+                Razorpay.Api.Order order = client.Order.Create(options);
+
+                // Step 2: If frontend has payment response, verify signature & save
+                if (!string.IsNullOrEmpty(model.RazorpayPaymentId) && !string.IsNullOrEmpty(model.RazorpaySignature))
+                {
+                    string expectedSignature = Utils.GetHash($"{order["id"]}|{model.RazorpayPaymentId}", secret);
+                    if (expectedSignature != model.RazorpaySignature)
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Signature verification failed"
+                        });
+                    }
+
+                    // Step 3: Save to DB
+                    using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                    {
+                        conn.Open();
+                        using (SqlCommand cmd = new SqlCommand("SP_InsertPaymentDetails", conn))
+                        {
+                            cmd.CommandType = CommandType.StoredProcedure;
+
+                            cmd.Parameters.AddWithValue("@BookingID", model.BookingID);
+                            cmd.Parameters.AddWithValue("@AmountPaid", model.Amount);
+                            cmd.Parameters.AddWithValue("@PaymentMode", "Razorpay");
+                            cmd.Parameters.AddWithValue("@TransactionID", model.RazorpayPaymentId);
+                            cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
+                            cmd.Parameters.AddWithValue("@IsRefunded", 0);
+
+                            int result = cmd.ExecuteNonQuery();
+                            if (result <= 0)
+                            {
+                                return StatusCode(500, new
+                                {
+                                    success = false,
+                                    message = "Failed to save payment details"
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Step 4: Return response
+                return Ok(new
+                {
+                    success = true,
+                    message = "Order created and payment processed successfully",
+                    data = new
+                    {
+                        orderId = order["id"].ToString(),
+                        key = key,
+                        bookingId = model.BookingID,
+                        transactionId = model.RazorpayPaymentId,
+                        amountPaid = model.Amount,
+                        paymentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Server error",
+                    error = ex.Message
+                });
+            }
+        }
 
     }
 }

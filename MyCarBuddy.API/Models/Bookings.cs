@@ -50,4 +50,28 @@ namespace MyCarBuddy.API.Models
         
     }
 
+    public class RazorpayPaymentRequest
+    {
+        public int BookingID { get; set; }
+        public decimal AmountPaid { get; set; }
+        public string RazorpayPaymentId { get; set; }
+        public string RazorpayOrderId { get; set; }
+        public string RazorpaySignature { get; set; }
+    }
+    public class RazorOrderRequest
+    {
+        public int BookingId { get; set; }
+        public decimal Amount { get; set; }
+    }
+    public class RazorCombinedPaymentRequest
+    {
+        public int BookingID { get; set; }
+        public int Amount { get; set; }
+
+        // These 2 will come only after frontend completes Razorpay payment
+        public string RazorpayPaymentId { get; set; }
+        public string RazorpaySignature { get; set; }
+    }
+
+
 }
