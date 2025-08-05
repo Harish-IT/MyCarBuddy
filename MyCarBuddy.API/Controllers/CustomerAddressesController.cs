@@ -49,8 +49,6 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@CustID", customeraddress.CustID);
                         cmd.Parameters.AddWithValue("@AddressLine1", customeraddress.AddressLine1);
                         cmd.Parameters.AddWithValue("@AddressLine2", customeraddress.AddressLine2);
-
-                      
                         cmd.Parameters.AddWithValue("@StateID", customeraddress.StateID);
                         cmd.Parameters.AddWithValue("@CityID", customeraddress.CityID);
                         cmd.Parameters.AddWithValue("@Pincode", customeraddress.Pincode);

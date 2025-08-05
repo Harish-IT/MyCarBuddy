@@ -190,7 +190,9 @@ namespace MyCarBuddy.API.Controllers
                     var dict = new Dictionary<string, object>();
                     foreach (DataColumn col in dt.Columns)
                     {
-                        dict[col.ColumnName] = row[col];
+
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
                     }
                     jsonResult.Add(dict);
                 }
@@ -200,6 +202,66 @@ namespace MyCarBuddy.API.Controllers
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
                 return StatusCode(500, new { message = "An error occurred while retrieving the skills.", error = ex.Message });
+
+            }
+
+        }
+
+        #endregion
+
+
+
+        #region GetListLeaveRequestByTechId
+
+        [HttpGet("Techid")]
+
+        public IActionResult GetListLeaveRequestByTechId(int TechId)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListLeaveRequestByTechId", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechId", TechId);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                }
+
+                if (dt.Rows.Count == 0)
+                {
+                    return NotFound(new { message = "Leave Requests not found" });
+                }
+                var Data = new List<Dictionary<string, object>>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        var value = row[col];
+                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                    }
+                    Data.Add(dict);
+                }
+
+                return Ok(Data);
+
+
+
+
+
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Leave Requests.", error = ex.Message });
 
             }
 

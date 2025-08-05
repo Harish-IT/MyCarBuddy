@@ -204,9 +204,6 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-
-
-
                 if (dt.Rows.Count == 0)
                 {
                     return NotFound(new { message = "Coupons not found" });
