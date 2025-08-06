@@ -276,55 +276,45 @@ namespace MyCarBuddy.API.Controllers
 
         #endregion
 
+
+
         #region GetBookingsById
 
-        [HttpGet("Id")]
-
-        public IActionResult GetBookingsById(int id)
+        [HttpGet("{custId}")]
+        public IActionResult GetBookingsByCustomer(int custId)
         {
             try
             {
-                DataTable dt = new DataTable();
+                string jsonResult = null;
+
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlCommand cmd = new SqlCommand("sp_GetListAllBookingsById", conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_GetListAllBookingsById", conn))
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CustID", custId);
+                    conn.Open();
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@BookingID", id);
-                        conn.Open();
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        if (reader.Read() && !reader.IsDBNull(0))
                         {
-                            dt.Load(reader);
+                            jsonResult = reader.GetString(0);
                         }
-                        conn.Close();
                     }
                 }
 
-                if (dt.Rows.Count == 0)
-                {
-                    return NotFound(new { message = "Bookings not found" });
-                }
-                var Data = new List<Dictionary<string, object>>();
-                foreach (DataRow row in dt.Rows)
-                {
-                    var dict = new Dictionary<string, object>();
-                    foreach (DataColumn col in dt.Columns)
-                    {
-                        var value = row[col];
-                        dict[col.ColumnName] = value == DBNull.Value ? null : value;
-                    }
-                    Data.Add(dict);
-                }
+                if (string.IsNullOrWhiteSpace(jsonResult))
+                    return NotFound(new { message = "No bookings found for this customer" });
 
-                return Ok(Data);
+                return Content(jsonResult, "application/json");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving   Bookings.");
+                _logger.LogError(ex, "Error retrieving bookings.");
                 return StatusCode(500, new { Success = false, Message = "Internal server error." });
             }
-
         }
+
 
         #endregion
 

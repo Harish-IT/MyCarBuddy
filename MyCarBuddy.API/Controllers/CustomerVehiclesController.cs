@@ -304,7 +304,7 @@ namespace MyCarBuddy.API.Controllers
         #region primary vehicle
 
         [HttpPost("primary-vehicle")]
-        public IActionResult PrimaryVehicle([FromQuery] int vehicleId)
+        public IActionResult PrimaryVehicle([FromQuery] int vehicleId , int custid)
         {
             try
             {
@@ -316,6 +316,7 @@ namespace MyCarBuddy.API.Controllers
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@VehicleID", vehicleId);
+                        cmd.Parameters.AddWithValue("@CustID", custid);
 
                         cmd.ExecuteNonQuery();
                     }
