@@ -23,6 +23,10 @@ namespace MyCarBuddy.API.Models
 
         public string Description { get; set; } = string.Empty;
         public int? EstimatedDurationMinutes { get; set; }
+
+        public decimal Default_Price { get; set; }
+
+
     }
 
     public class PlanPackageDTO

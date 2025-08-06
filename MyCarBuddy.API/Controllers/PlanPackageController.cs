@@ -110,11 +110,13 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@IncludeID", model.IncludeID ?? "");
                     cmd.Parameters.AddWithValue("@PackageImage", packageImagePath);
                     cmd.Parameters.AddWithValue("@BannerImage", bannerImageCsv);
-                    cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
+                    cmd.Parameters.AddWithValue("@Total_Offer_Price", model.TotalPrice);
                     cmd.Parameters.AddWithValue("@Status", model.Status);
                     cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
                     cmd.Parameters.AddWithValue("@Description",model.Description??(object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@EstimatedDurationMinutes",model.EstimatedDurationMinutes ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Default_Price", model.Default_Price);
+
 
                     conn.Open();
                     var newId = cmd.ExecuteScalar();
@@ -270,7 +272,7 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@IncludeID", model.IncludeID ?? "");
                     cmd.Parameters.AddWithValue("@PackageImage", packageImagePath);
                     cmd.Parameters.AddWithValue("@BannerImage", bannerImageCsv);
-                    cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
+                    cmd.Parameters.AddWithValue("@Total_Offer_Price", model.TotalPrice);
                     cmd.Parameters.AddWithValue("@Status", model.Status);
                     cmd.Parameters.AddWithValue("@ModifiedBy", model.ModifiedBy);
 
@@ -279,6 +281,8 @@ namespace MyCarBuddy.API.Controllers
 
                     cmd.Parameters.AddWithValue("@EstimatedDurationMinutes",
                         model.EstimatedDurationMinutes.HasValue ? model.EstimatedDurationMinutes.Value : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Default_Price", model.Default_Price);
+
                     conn.Open();
                     cmd.ExecuteNonQuery();
                     conn.Close();
