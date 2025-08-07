@@ -296,7 +296,7 @@ namespace MyCarBuddy.API.Controllers
 
 
 
-        #region GetBookingsById
+        #region GetBookingsByCustomerIdId
 
         [HttpGet("{custId}")]
         public IActionResult GetBookingsByCustomer(int custId)
@@ -314,15 +314,25 @@ namespace MyCarBuddy.API.Controllers
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        if (reader.Read() && !reader.IsDBNull(0))
+                        // Combine multiple rows into one JSON array
+                        var sb = new System.Text.StringBuilder();
+                        sb.Append("["); // start array
+
+                        bool first = true;
+                        while (reader.Read() && !reader.IsDBNull(0))
                         {
-                            jsonResult = reader.GetString(0);
+                            if (!first) sb.Append(",");
+                            sb.Append(reader.GetString(0));
+                            first = false;
                         }
+
+                        sb.Append("]"); // end array
+                        jsonResult = sb.ToString();
                     }
                 }
 
-                if (string.IsNullOrWhiteSpace(jsonResult))
-                    return NotFound(new { message = "No bookings found for this customer" });
+                if (string.IsNullOrWhiteSpace(jsonResult) || jsonResult == "[]")
+                    return NotFound(new { message = "No bookings found for this Id" });
 
                 return Content(jsonResult, "application/json");
             }
@@ -332,7 +342,6 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { Success = false, Message = "Internal server error." });
             }
         }
-
 
         #endregion
 
@@ -385,6 +394,55 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #endregion
+
+
+
+        #region GetListBookingsById By Id
+
+
+        [HttpGet("BookingId")]
+
+        public IActionResult GetListBookingsById([FromQuery] int Id)
+        {
+
+
+            try
+            {
+                string jsonResult = null;
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlCommand cmd = new SqlCommand("GetListBookingByBookingId", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@BookingID", Id);
+                    conn.Open();
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read() && !reader.IsDBNull(0))
+                        {
+                            jsonResult = reader.GetString(0);
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(jsonResult))
+                    return NotFound(new { message = "No bookings found for this Id" });
+
+                return Content(jsonResult, "application/json");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving bookings.");
+                return StatusCode(500, new { Success = false, Message = "Internal server error." });
+            }
+
+
+
+        }
+
+        #endregion
+
 
 
         #region AssignedBookingsFetchByDate
