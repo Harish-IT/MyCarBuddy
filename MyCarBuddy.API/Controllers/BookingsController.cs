@@ -316,7 +316,7 @@ namespace MyCarBuddy.API.Controllers
                     {
                         // Combine multiple rows into one JSON array
                         var sb = new System.Text.StringBuilder();
-                        sb.Append("["); // start array
+                        //sb.Append("["); // start array
 
                         bool first = true;
                         while (reader.Read() && !reader.IsDBNull(0))
@@ -326,7 +326,7 @@ namespace MyCarBuddy.API.Controllers
                             first = false;
                         }
 
-                        sb.Append("]"); // end array
+                       // sb.Append("]"); // end array
                         jsonResult = sb.ToString();
                     }
                 }
@@ -353,8 +353,6 @@ namespace MyCarBuddy.API.Controllers
 
         public IActionResult GetAssignedBookings([FromQuery] int Id)
         {
-
-
             try
             {
                 string jsonResult = null;
@@ -376,7 +374,7 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonResult))
-                    return NotFound(new { message = "No bookings found for this customer" });
+                    return NotFound(new { message = "No bookings found for this technician" });
 
                 return Content(jsonResult, "application/json");
             }
@@ -385,12 +383,6 @@ namespace MyCarBuddy.API.Controllers
                 _logger.LogError(ex, "Error retrieving bookings.");
                 return StatusCode(500, new { Success = false, Message = "Internal server error." });
             }
-
-
-
-
-
-
         }
 
         #endregion
