@@ -326,7 +326,7 @@ namespace MyCarBuddy.API.Controllers
                             first = false;
                         }
 
-                       // sb.Append("]"); // end array
+                        // sb.Append("]"); // end array
                         jsonResult = sb.ToString();
                     }
                 }
@@ -440,7 +440,7 @@ namespace MyCarBuddy.API.Controllers
         #region AssignedBookingsFetchByDate
 
         [HttpGet("GetAssignedBookingsByDate")]
-        public IActionResult GetAssignedBookingsByDate( [FromQuery] int TechID,[FromQuery] DateTime FromDate,[FromQuery] DateTime ToDate)
+        public IActionResult GetAssignedBookingsByDate([FromQuery] int TechID, [FromQuery] DateTime FromDate, [FromQuery] DateTime ToDate)
         {
             try
             {
@@ -603,6 +603,61 @@ namespace MyCarBuddy.API.Controllers
                 });
             }
         }
+
+
+        #region Get GetTechBookingCounts
+
+        [HttpGet("GetTechBookingCounts")]
+
+        public IActionResult GetTechBookingCounts([FromQuery] int techId)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetTodayAndScheduledBookingsCount", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechID", techId);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "No bookings found for the given technician" });
+                    }
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                        }
+                        Data.Add(dict);
+                    }
+
+                    return Ok(Data);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving the Categories.", error = ex.Message });
+
+            }
+
+        }
+
+
+
+
+        #endregion
 
 
         //[HttpPost("process-payment")]
