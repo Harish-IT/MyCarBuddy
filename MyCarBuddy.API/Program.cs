@@ -12,44 +12,24 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Detect environment update
-var isDevelopment = builder.Environment.IsDevelopment();
-
-// Conditional URL binding
-if (isDevelopment)
-{
-    builder.WebHost.UseUrls("https://localhost:5001");
-    Console.WriteLine("Binding to https://localhost:5000 for local development.");
-}
-else
-{
-    builder.WebHost.UseUrls("https://0.0.0.0:443");
-    Console.WriteLine("Binding to https://0.0.0.0:443 for server/production.");
-}
-
-// Add services
+// Add controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-
-
+// ✅ Global CORS policy — allows all origins, methods, and headers
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp",
-        policy =>
-        {
-            policy.WithOrigins(
-                "http://localhost:5173",
-                "https://mycarbuddy.glansadesigns.com",
-                "http://localhost:3000"
-            )
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(_ => true) // allow any domain
             .AllowAnyHeader()
-            .AllowAnyMethod();
-            // .AllowCredentials(); // Uncomment if needed
-        });
+            .AllowAnyMethod()
+            .AllowCredentials(); // if you need cookies/tokens with requests
+    });
 });
 
-// Swagger setup (enabled only in development)
+// Swagger setup
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "MyCarBuddy API", Version = "v1" });
@@ -77,7 +57,6 @@ builder.Services.AddSwaggerGen(options =>
 
 // JWT Setup
 builder.Services.AddScoped<JwtService>();
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -89,7 +68,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
 
@@ -97,6 +77,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Enable Swagger in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -106,16 +87,19 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Middleware
+// Error logging middleware
 app.UseMiddleware<MyCarBuddy.API.Middleware.ErrorLoggingMiddleware>();
+
+// Use HTTPS redirection if SSL is enabled on IIS
 app.UseHttpsRedirection();
 
-// Use the CORS policy here
-app.UseCors("AllowReactApp");
+// ✅ Apply CORS before authentication
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 
 app.MapControllers();
+
 app.Run();
