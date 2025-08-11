@@ -164,7 +164,6 @@ namespace MyCarBuddy.API.Controllers
                     return Ok(Data);
 
 
-
                   
                 }
             }
@@ -172,7 +171,7 @@ namespace MyCarBuddy.API.Controllers
             {
 
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the times slot.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the Coupons.", error = ex.Message });
 
             }
         }

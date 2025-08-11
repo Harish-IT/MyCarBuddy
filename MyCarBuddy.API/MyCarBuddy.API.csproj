@@ -47,10 +47,12 @@
 		<Folder Include="wwwroot\Documents\" />
 		<Folder Include="wwwroot\Images\Customer\" />
 		<Folder Include="wwwroot\Images\Category\" />
+		<Folder Include="wwwroot\Images\ServiceImages\" />
 		<Folder Include="wwwroot\Images\PlanPrice\" />
 		<Folder Include="wwwroot\Images\PackageImages\" />
 		<Folder Include="wwwroot\Images\SubCategory2\" />
 		<Folder Include="wwwroot\Images\SubCategory1\" />
+		<Folder Include="wwwroot\Invoices\" />
 		<Folder Include="wwwroot\Invoices\" />
 	</ItemGroup>
 

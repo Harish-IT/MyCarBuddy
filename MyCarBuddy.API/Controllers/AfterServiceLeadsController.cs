@@ -19,72 +19,56 @@ namespace MyCarBuddy.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FeedbackController : ControllerBase
+    public class AfterServiceLeadsController : ControllerBase
     {
-        #region IConfiguration
 
         private readonly IConfiguration _configuration;
-        private readonly ILogger<FeedbackController> _logger;
+        private readonly ILogger<AfterServiceLeadsController> _logger;
         private readonly IWebHostEnvironment _env;
 
-        public FeedbackController(IConfiguration configuration, ILogger<FeedbackController> logger, IWebHostEnvironment env)
+        public AfterServiceLeadsController(IConfiguration configuration, ILogger<AfterServiceLeadsController> logger, IWebHostEnvironment env)
         {
             _configuration = configuration;
             _logger = logger;
             _env = env;
         }
 
-        #endregion
-
-        #region InsertFeedback
-
         [HttpPost]
-
-        public IActionResult InsertFeedback([FromBody] FeedbackModel feedback)
+        public IActionResult InsertReason([FromBody] AfterServiceLeadsModel leads)
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_InsertFeedback", conn))
+                    using (SqlCommand cmd = new SqlCommand("Sp_InsertReason", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
 
-                        cmd.Parameters.AddWithValue("@BookingID", feedback.BookingID);
-                        cmd.Parameters.AddWithValue("@CustID", feedback.CustID);
-                        cmd.Parameters.AddWithValue("@TechID", feedback.TechID);
-                        cmd.Parameters.AddWithValue("@TechReview", feedback.TechReview ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ServiceReview", feedback.ServiceReview ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@TechRating", feedback.TechRating??(object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@ServiceRating", feedback.ServiceRating ?? (object)DBNull.Value);
-
+                        cmd.Parameters.AddWithValue("@Reason", leads.Reason);
                         conn.Open();
                         cmd.ExecuteNonQuery();
                     }
                 }
-
-                return Ok(new { message = "Feedback inserted successfully." });
+                return Ok(new { status = true, message = "Reason inserted successfully." });
             }
             catch (Exception ex)
             {
-                // Your error logging here
-                return StatusCode(500, new { message = "An error occurred while inserting the feedback.", error = ex.Message });
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { status = false, message = "An error occurred while inserting the Reason.", error = ex.Message });
             }
         }
 
-        #endregion
-
-        #region GetListFeedback
+        #region GetListReasons
 
         [HttpGet]
-        public IActionResult GetListFeedback()
+        public IActionResult GetListReasons()
         {
             try
             {
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("sp_GetListFeedback", conn))
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListAllReasons", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         conn.Open();
@@ -93,6 +77,10 @@ namespace MyCarBuddy.API.Controllers
                             dt.Load(reader);
                         }
                         conn.Close();
+                    }
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "Reasons not found" });
                     }
                     var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
@@ -105,6 +93,7 @@ namespace MyCarBuddy.API.Controllers
                         }
                         Data.Add(dict);
                     }
+
                     return Ok(Data);
                 }
             }
@@ -112,68 +101,41 @@ namespace MyCarBuddy.API.Controllers
             {
 
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the times slot.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the Reasons.", error = ex.Message });
 
             }
         }
 
         #endregion
 
-        #region GetFeedbackListByCustIdBookingId
+        #region GetReasonsListById
 
+        [HttpGet("id")]
 
-        [HttpGet("feedback")]
-        public IActionResult GetFeedback(
-            int? custId = null,
-            int? techId = null,
-            int? bookingId = null)
+        public IActionResult GetReasonsListById(int Id)
         {
             try
             {
-                string storedProcedure;
-                SqlParameter[] parameters;
-
-                if (custId.HasValue)
-                {
-                    storedProcedure = "sp_GetListFeedbackby_CustId_BookingId";
-                    parameters = new SqlParameter[]
-                    {
-                    new SqlParameter("@CustID", (object)custId ?? DBNull.Value),
-                    new SqlParameter("@BookingID", (object)bookingId ?? DBNull.Value)
-                    };
-                }
-                else if (techId.HasValue)
-                {
-                    storedProcedure = "sp_GetListFeedbackby_Tech_Booking";
-                    parameters = new SqlParameter[]
-                    {
-                    new SqlParameter("@TechID", (object)techId ?? DBNull.Value),
-                    new SqlParameter("@BookingID", (object)bookingId ?? DBNull.Value)
-                    };
-                }
-                else
-                {
-                    return BadRequest(new { message = "Please provide either custId or techId." });
-                }
-
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
-                using (SqlCommand cmd = new SqlCommand(storedProcedure, conn))
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddRange(parameters);
-                    conn.Open();
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (SqlCommand cmd = new SqlCommand("sp_GetListAllReasonsById", conn))
                     {
-                        dt.Load(reader);
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@ID", Id);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
                     }
                 }
 
                 if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "Feedback not found" });
+                    return NotFound(new { message = "Reasons not found" });
                 }
-
                 var Data = new List<Dictionary<string, object>>();
                 foreach (DataRow row in dt.Rows)
                 {
@@ -187,15 +149,56 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 return Ok(Data);
+
+
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the feedback.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the Reasons.", error = ex.Message });
+
+            }
+
+        }
+
+        #endregion
+
+
+        [HttpPost("InsertServiceLead")]
+        public IActionResult InsertServiceLeads([FromBody] ServiceLeads serviceleads)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("Sp_InsertServiceLead", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@BookingID", serviceleads.BookingID);
+                        cmd.Parameters.AddWithValue("@PackageID", serviceleads.PackageID);
+                        cmd.Parameters.AddWithValue("@IncludeID", serviceleads.IncludeID);
+                        cmd.Parameters.AddWithValue("@IncludeName", serviceleads.IncludeName);
+                        cmd.Parameters.AddWithValue("@Status", serviceleads.Status);
+                        cmd.Parameters.AddWithValue("@Reasons", serviceleads.Reasons);
+                        cmd.Parameters.AddWithValue("@TechID", serviceleads.TechID);
+
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return Ok(new { status = true, message = "Reason inserted successfully." });
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { status = false, message = "An error occurred while inserting the Reason.", error = ex.Message });
             }
         }
-       
-        #endregion
+
+
+
+
 
     }
 }
