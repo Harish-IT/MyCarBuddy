@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity.Infrastructure;
 using System.IO;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MyCarBuddy.API.Controllers
 {
@@ -162,42 +163,48 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #endregion
-
-
-        [HttpPost("InsertServiceLead")]
-        public IActionResult InsertServiceLeads([FromBody] ServiceLeads serviceleads)
+        [HttpPost("InsertServiceLeads")]
+        public IActionResult InsertServiceLeads([FromBody] List<ServiceLeadRequest> serviceLeadsList)
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
-                    using (SqlCommand cmd = new SqlCommand("Sp_InsertServiceLead", conn))
+                    conn.Open();
+
+                    foreach (var lead in serviceLeadsList)
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
+                        foreach (var package in lead.Packages)
+                        {
+                            foreach (var include in package.Includes)
+                            {
+                                using (SqlCommand cmd = new SqlCommand("Sp_InsertServiceLead", conn))
+                                {
+                                    cmd.CommandType = CommandType.StoredProcedure;
 
-                        cmd.Parameters.AddWithValue("@BookingID", serviceleads.BookingID);
-                        cmd.Parameters.AddWithValue("@PackageID", serviceleads.PackageID);
-                        cmd.Parameters.AddWithValue("@IncludeID", serviceleads.IncludeID);
-                        cmd.Parameters.AddWithValue("@IncludeName", serviceleads.IncludeName);
-                        cmd.Parameters.AddWithValue("@Status", serviceleads.Status);
-                        cmd.Parameters.AddWithValue("@Reasons", serviceleads.Reasons);
-                        cmd.Parameters.AddWithValue("@TechID", serviceleads.TechID);
+                                    cmd.Parameters.AddWithValue("@BookingID", lead.BookingID);
+                                    cmd.Parameters.AddWithValue("@PackageID", package.PackageID);
+                                    cmd.Parameters.AddWithValue("@IncludeID", include.IncludeID);
+                                    cmd.Parameters.AddWithValue("@IncludeName", include.IncludeName ?? "");
+                                    cmd.Parameters.AddWithValue("@Status", include.Status);
+                                    cmd.Parameters.AddWithValue("@Reasons", lead.Reasons ?? "");
+                                    cmd.Parameters.AddWithValue("@TechID", lead.TechID ?? (object)DBNull.Value);
 
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
                     }
                 }
-                return Ok(new { status = true, message = "Reason inserted successfully." });
+
+                return Ok(new { status = true, message = "Service leads inserted successfully." });
             }
             catch (Exception ex)
             {
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { status = false, message = "An error occurred while inserting the Reason.", error = ex.Message });
+                return StatusCode(500, new { status = false, message = "Error inserting service leads", error = ex.Message });
             }
         }
-
-
-
 
 
     }
