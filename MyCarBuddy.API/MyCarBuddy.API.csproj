@@ -51,6 +51,7 @@
 		<Folder Include="wwwroot\Images\PackageImages\" />
 		<Folder Include="wwwroot\Images\SubCategory2\" />
 		<Folder Include="wwwroot\Images\SubCategory1\" />
+		<Folder Include="wwwroot\Invoices\" />
 	</ItemGroup>
 
 	<!-- ✅ No need to include wwwroot files manually -->
@@ -59,6 +60,7 @@
 		<PackageReference Include="Braintree" Version="5.34.0" />
 		<PackageReference Include="EntityFramework" Version="6.5.1" />
 		<PackageReference Include="GSF.Core" Version="2.4.28" />
+		<PackageReference Include="iTextSharp" Version="5.5.13.4" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.0" />

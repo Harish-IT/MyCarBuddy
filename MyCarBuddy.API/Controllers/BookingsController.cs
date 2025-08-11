@@ -16,9 +16,15 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
+
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using System.IO;
 
 
 namespace MyCarBuddy.API.Controllers
@@ -132,8 +138,8 @@ namespace MyCarBuddy.API.Controllers
                                 await image.CopyToAsync(stream);
 
                             using (SqlCommand cmd = new SqlCommand(@"INSERT INTO BookingImages 
-                        (BookingID, ImageURL, UploadedBy, UploadedAt, CustID, TechID, ImageUploadType)
-                        VALUES (@BookingID, @ImageURL, @UploadedBy, @UploadedAt, @CustID, @TechID, 'Customer')", conn))
+                (BookingID, ImageURL, UploadedBy, UploadedAt, CustID, TechID, ImageUploadType)
+                VALUES (@BookingID, @ImageURL, @UploadedBy, @UploadedAt, @CustID, @TechID, 'Customer')", conn))
                             {
                                 cmd.Parameters.AddWithValue("@BookingID", bookingId);
                                 cmd.Parameters.AddWithValue("@ImageURL", "/BookingImages/" + fileName);
@@ -148,20 +154,30 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                // 4. Razorpay Order Creation
-                string key = _configuration["Razorpay:Key"];
-                string secret = _configuration["Razorpay:Secret"];
-                RazorpayClient client = new RazorpayClient(key, secret);
+                // 4. Only create Razorpay order if not Cash On Service
+                object razorpayOrderInfo = null;
+                if (!string.Equals(model.PaymentMethod, "COS", StringComparison.OrdinalIgnoreCase))
+                {
+                    string key = _configuration["Razorpay:Key"];
+                    string secret = _configuration["Razorpay:Secret"];
+                    RazorpayClient client = new RazorpayClient(key, secret);
 
-                Dictionary<string, object> options = new Dictionary<string, object>
-        {
-            { "amount", model.TotalPrice * 100 },  // Convert to paise
-            { "currency", "INR" },
-            { "receipt", bookingId.ToString() },
-            { "payment_capture", 1 }
-        };
+                    Dictionary<string, object> options = new Dictionary<string, object>
+            {
+                { "amount", model.TotalPrice * 100 }, // in paise
+                { "currency", "INR" },
+                { "receipt", bookingId.ToString() },
+                { "payment_capture", 1 }
+            };
 
-                Razorpay.Api.Order order = client.Order.Create(options);
+                    Razorpay.Api.Order order = client.Order.Create(options);
+
+                    razorpayOrderInfo = new
+                    {
+                        OrderID = order["id"].ToString(),
+                        Key = key
+                    };
+                }
 
                 // 5. Notification (optional)
                 await SendBookingConfirmationSMS(model.CustID, bookingId);
@@ -173,12 +189,10 @@ namespace MyCarBuddy.API.Controllers
                     Success = true,
                     BookingID = bookingId,
                     BookingTrackID = model.BookingTrackID,
-                    Razorpay = new
-                    {
-                        OrderID = order["id"].ToString(),
-                        Key = key
-                    },
-                    Message = "Booking created and order generated successfully."
+                    Razorpay = razorpayOrderInfo,
+                    Message = model.PaymentMethod == "COS"
+                        ? "Booking created successfully. Payment will be collected on service."
+                        : "Booking created and Razorpay order generated successfully."
                 });
             }
             catch (Exception ex)
@@ -186,6 +200,7 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { Success = false, Message = ex.Message });
             }
         }
+
 
 
 
@@ -534,11 +549,12 @@ namespace MyCarBuddy.API.Controllers
         //    });
         //}
 
+
+
         [HttpPost("confirm-Payment")]
         public IActionResult ConfirmPayment([FromBody] RazorpayPaymentRequest paymentRequest)
         {
             string secret = _configuration["Razorpay:Secret"];
-
             string expectedSignature = Utils.GetHash($"{paymentRequest.RazorpayOrderId}|{paymentRequest.RazorpayPaymentId}", secret);
 
             if (expectedSignature != paymentRequest.RazorpaySignature)
@@ -552,6 +568,19 @@ namespace MyCarBuddy.API.Controllers
 
             try
             {
+                string invoiceNumber;
+                string fileUrl;
+
+                // Prepare invoice file path
+                string invoicesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Invoices");
+                if (!Directory.Exists(invoicesFolder))
+                {
+                    Directory.CreateDirectory(invoicesFolder);
+                }
+
+                // File path in server
+                string filePath = Path.Combine(invoicesFolder, "TEMP.pdf"); // Will rename after SP returns invoice number
+
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     conn.Open();
@@ -566,6 +595,16 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
                         cmd.Parameters.AddWithValue("@IsRefunded", 0);
 
+                        // Placeholder path (will update with real invoice number)
+                        string tempPath = $"{Request.Scheme}://{Request.Host}/Invoices/TEMP.pdf";
+                        cmd.Parameters.AddWithValue("@FolderPath", tempPath);
+
+                        SqlParameter outputInvoice = new SqlParameter("@InvoiceNumber", SqlDbType.NVarChar, 50)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        cmd.Parameters.Add(outputInvoice);
+
                         int result = cmd.ExecuteNonQuery();
 
                         if (result <= 0)
@@ -576,20 +615,53 @@ namespace MyCarBuddy.API.Controllers
                                 message = "Failed to save payment details"
                             });
                         }
+
+                        invoiceNumber = outputInvoice.Value.ToString();
+                    }
+                }
+
+                // Now update file path with invoice number
+                string newFilePath = Path.Combine(invoicesFolder, $"{invoiceNumber}.pdf");
+                fileUrl = $"{Request.Scheme}://{Request.Host}/Invoices/{invoiceNumber}.pdf";
+
+                // Generate PDF
+                iTextSharp.text.Document doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4);
+                PdfWriter.GetInstance(doc, new FileStream(newFilePath, FileMode.Create));
+                doc.Open();
+                doc.Add(new Paragraph("Invoice"));
+                doc.Add(new Paragraph($"Invoice Number: {invoiceNumber}"));
+                doc.Add(new Paragraph($"Booking ID: {paymentRequest.BookingID}"));
+                doc.Add(new Paragraph($"Transaction ID: {paymentRequest.RazorpayPaymentId}"));
+                doc.Add(new Paragraph($"Amount Paid: {paymentRequest.AmountPaid:C}"));
+                doc.Add(new Paragraph($"Payment Mode: Razorpay"));
+                doc.Add(new Paragraph($"Payment Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"));
+                doc.Close();
+
+                // Update folder path in DB for this invoice
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand("UPDATE Payments SET FolderPath = @Path WHERE InvoiceNumber = @InvoiceNumber", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Path", fileUrl);
+                        cmd.Parameters.AddWithValue("@InvoiceNumber", invoiceNumber);
+                        cmd.ExecuteNonQuery();
                     }
                 }
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Payment confirmed and saved successfully",
+                    message = "Payment confirmed, invoice generated successfully",
                     data = new
                     {
                         bookingId = paymentRequest.BookingID,
                         transactionId = paymentRequest.RazorpayPaymentId,
                         amountPaid = paymentRequest.AmountPaid,
                         paymentMode = "Razorpay",
-                        paymentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                        paymentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        invoiceNumber = invoiceNumber,
+                        invoiceUrl = fileUrl
                     }
                 });
             }
@@ -603,6 +675,78 @@ namespace MyCarBuddy.API.Controllers
                 });
             }
         }
+
+
+
+        //[HttpPost("confirm-Payment")]
+        //public IActionResult ConfirmPayment([FromBody] RazorpayPaymentRequest paymentRequest)
+        //{
+        //    string secret = _configuration["Razorpay:Secret"];
+
+        //    string expectedSignature = Utils.GetHash($"{paymentRequest.RazorpayOrderId}|{paymentRequest.RazorpayPaymentId}", secret);
+
+        //    if (expectedSignature != paymentRequest.RazorpaySignature)
+        //    {
+        //        return BadRequest(new
+        //        {
+        //            success = false,
+        //            message = "Signature verification failed"
+        //        });
+        //    }
+
+        //    try
+        //    {
+        //        using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+        //        {
+        //            conn.Open();
+        //            using (SqlCommand cmd = new SqlCommand("SP_InsertPaymentDetails", conn))
+        //            {
+        //                cmd.CommandType = CommandType.StoredProcedure;
+
+        //                cmd.Parameters.AddWithValue("@BookingID", paymentRequest.BookingID);
+        //                cmd.Parameters.AddWithValue("@AmountPaid", paymentRequest.AmountPaid);
+        //                cmd.Parameters.AddWithValue("@PaymentMode", "Razorpay");
+        //                cmd.Parameters.AddWithValue("@TransactionID", paymentRequest.RazorpayPaymentId);
+        //                cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
+        //                cmd.Parameters.AddWithValue("@IsRefunded", 0);
+
+        //                int result = cmd.ExecuteNonQuery();
+
+        //                if (result <= 0)
+        //                {
+        //                    return StatusCode(500, new
+        //                    {
+        //                        success = false,
+        //                        message = "Failed to save payment details"
+        //                    });
+        //                }
+        //            }
+        //        }
+
+        //        return Ok(new
+        //        {
+        //            success = true,
+        //            message = "Payment confirmed and saved successfully",
+        //            data = new
+        //            {
+        //                bookingId = paymentRequest.BookingID,
+        //                transactionId = paymentRequest.RazorpayPaymentId,
+        //                amountPaid = paymentRequest.AmountPaid,
+        //                paymentMode = "Razorpay",
+        //                paymentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+        //            }
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new
+        //        {
+        //            success = false,
+        //            message = "Server error",
+        //            error = ex.Message
+        //        });
+        //    }
+        //}
 
 
         #region Get GetTechBookingCounts
@@ -653,6 +797,79 @@ namespace MyCarBuddy.API.Controllers
             }
 
         }
+
+
+        [HttpPost("update-booking")]
+        public async Task<IActionResult> UpdateBooking([FromBody] BookingUpdateDTO model)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    await conn.OpenAsync();
+
+                    // Call SP to update booking and insert payment record if missing
+                    using (SqlCommand cmd = new SqlCommand("SP_UpdateBookingAndCreateOrder", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@BookingID", model.BookingID);
+                        cmd.Parameters.AddWithValue("@CustID", model.CustID);
+                        cmd.Parameters.AddWithValue("@TechID", model.TechID);
+                        cmd.Parameters.AddWithValue("@BookingStatus", model.BookingStatus ?? "Pending");
+                        cmd.Parameters.AddWithValue("@PaymentMethod", model.PaymentMethod ?? "");
+                        cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
+                        cmd.Parameters.AddWithValue("@ModifiedBy", model.ModifiedBy);
+
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+
+                    // Create Razorpay order if online payment and order not created
+                    if (model.PaymentMethod != null && model.PaymentMethod != "COS")
+                    {
+                        string key = _configuration["Razorpay:Key"];
+                        string secret = _configuration["Razorpay:Secret"];
+                        RazorpayClient client = new RazorpayClient(key, secret);
+
+                        Dictionary<string, object> options = new Dictionary<string, object>
+                {
+                    { "amount", model.TotalPrice * 100 }, // in paise
+                    { "currency", "INR" },
+                    { "receipt", model.BookingID.ToString() },
+                    { "payment_capture", 1 }
+                };
+
+                        Razorpay.Api.Order order = client.Order.Create(options);
+
+                        // Update Payments table with Razorpay OrderID
+                        using (SqlCommand cmdUpdate = new SqlCommand(
+                            "UPDATE Payments SET TransactionID = @TransactionID WHERE BookingID = @BookingID AND PaymentMode = 'Razorpay'", conn))
+                        {
+                            cmdUpdate.Parameters.AddWithValue("@TransactionID", order["id"].ToString());
+                            cmdUpdate.Parameters.AddWithValue("@BookingID", model.BookingID);
+                            await cmdUpdate.ExecuteNonQueryAsync();
+                        }
+
+                        return Ok(new
+                        {
+                            Success = true,
+                            Message = "Booking updated and Razorpay order created.",
+                            Razorpay = new
+                            {
+                                OrderID = order["id"].ToString(),
+                                Key = key
+                            }
+                        });
+                    }
+
+                    return Ok(new { Success = true, Message = "Booking updated without Razorpay order." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Message = ex.Message });
+            }
+        }
+
 
 
 

@@ -73,5 +73,19 @@ namespace MyCarBuddy.API.Models
         public string RazorpaySignature { get; set; }
     }
 
+    public class BookingUpdateDTO
+    {
+        public int BookingID { get; set; }
+        public string BookingStatus { get; set; }
+        public string PaymentMethod { get; set; }
+        public decimal TotalPrice { get; set; }
+
+        public int CustID { get; set; }
+
+        public int TechID { get; set; }
+
+        public int ModifiedBy { get; set; }
+    }
+
 
 }
