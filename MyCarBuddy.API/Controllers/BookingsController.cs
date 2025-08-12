@@ -521,22 +521,29 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@CustID", custId);
                     conn.Open();
 
+                    //using (SqlDataReader reader = cmd.ExecuteReader())
+                    //{
+                    //    // Combine multiple rows into one JSON array
+                    //    var sb = new System.Text.StringBuilder();
+                    //    //sb.Append("["); // start array
+
+                    //    bool first = true;
+                    //    while (reader.Read() && !reader.IsDBNull(0))
+                    //    {
+                    //        if (!first) sb.Append(",");
+                    //        sb.Append(reader.GetString(0));
+                    //        first = false;
+                    //    }
+
+                    //    // sb.Append("]"); // end array
+                    //    jsonResult = sb.ToString();
+                    //}
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        // Combine multiple rows into one JSON array
-                        var sb = new System.Text.StringBuilder();
-                        //sb.Append("["); // start array
-
-                        bool first = true;
-                        while (reader.Read() && !reader.IsDBNull(0))
+                        if (reader.Read() && !reader.IsDBNull(0))
                         {
-                            if (!first) sb.Append(",");
-                            sb.Append(reader.GetString(0));
-                            first = false;
+                            jsonResult = reader.GetString(0);
                         }
-
-                        // sb.Append("]"); // end array
-                        jsonResult = sb.ToString();
                     }
                 }
 
