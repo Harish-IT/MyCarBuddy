@@ -49,6 +49,7 @@ namespace MyCarBuddy.API.Controllers
         [HttpPost("insert-booking")]
         public async Task<IActionResult> InsertBooking([FromForm] BookingInsertDTO model)
         {
+            decimal priceWithGst = 0;
             try
             {
                 int bookingId = 0;
@@ -80,6 +81,20 @@ namespace MyCarBuddy.API.Controllers
                     string newTrackId = $"{prefix}{nextSequence:D3}";
                     model.BookingTrackID = newTrackId;
 
+
+
+                    // GST Calculation (18%) and coupon deduction
+                    decimal gstAmount = Convert.ToDecimal(model.TotalPrice * 0.18m);
+                     priceWithGst = Convert.ToDecimal(model.TotalPrice + gstAmount);
+                    //decimal couponAmount = model.CouponAmount ?? 0;
+                    decimal couponAmount = Convert.ToDecimal(model.CouponAmount);
+
+                    decimal finalPrice = priceWithGst - couponAmount;
+                    if (finalPrice < 0)
+                        finalPrice = 0;
+                   // model.TotalPrice = finalPrice;
+                    model.GSTAmount = gstAmount;
+
                     // 2. Insert Booking
                     using (SqlCommand cmd = new SqlCommand("SP_InsertBookings", conn))
                     {
@@ -103,6 +118,9 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@PackageIds", model.PackageIds ?? "");
                         cmd.Parameters.AddWithValue("@PackagePrice", model.PackagePrice ?? "");
                         cmd.Parameters.AddWithValue("@TotalPrice", model.TotalPrice);
+
+                        cmd.Parameters.AddWithValue("@GSTAmount", model.GSTAmount);
+
                         cmd.Parameters.AddWithValue("@CouponCode", model.CouponCode ?? "");
                         cmd.Parameters.AddWithValue("@CouponAmount", model.CouponAmount);
                         cmd.Parameters.AddWithValue("@BookingFrom", model.BookingFrom ?? "App");
@@ -162,9 +180,10 @@ namespace MyCarBuddy.API.Controllers
                     string secret = _configuration["Razorpay:Secret"];
                     RazorpayClient client = new RazorpayClient(key, secret);
 
+
                     Dictionary<string, object> options = new Dictionary<string, object>
             {
-                { "amount", model.TotalPrice * 100 }, // in paise
+                { "amount",priceWithGst * 100 }, // in paise
                 { "currency", "INR" },
                 { "receipt", bookingId.ToString() },
                 { "payment_capture", 1 }
