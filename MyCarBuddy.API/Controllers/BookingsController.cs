@@ -102,7 +102,6 @@ namespace MyCarBuddy.API.Controllers
 
                         cmd.Parameters.AddWithValue("@BookingTrackID", model.BookingTrackID ?? "");
                         cmd.Parameters.AddWithValue("@CustID", model.CustID);
-                        cmd.Parameters.AddWithValue("@TechID", model.TechID);
                         cmd.Parameters.AddWithValue("@TechFullName", model.TechFullName ?? "");
                         cmd.Parameters.AddWithValue("@TechPhoneNumber", model.TechPhoneNumber ?? "");
                         cmd.Parameters.AddWithValue("@CustFullName", model.CustFullName ?? "");
