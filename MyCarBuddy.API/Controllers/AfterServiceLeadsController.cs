@@ -46,6 +46,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.CommandType = CommandType.StoredProcedure;
 
                         cmd.Parameters.AddWithValue("@Reason", leads.Reason);
+                        cmd.Parameters.AddWithValue("@IsActive", leads.IsActive);
                         conn.Open();
                         cmd.ExecuteNonQuery();
                     }
@@ -58,6 +59,52 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { status = false, message = "An error occurred while inserting the Reason.", error = ex.Message });
             }
         }
+
+
+        #region UpdateReason
+
+        [HttpPut]
+        public IActionResult UpdateReason(AfterServiceLeadsModel Leads)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("Sp_UpdateReason", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@ID", Leads.ID);
+                        cmd.Parameters.AddWithValue("@Reason", Leads.Reason);
+                        cmd.Parameters.AddWithValue("@IsActive", Leads.IsActive);
+                        conn.Open();
+                        int rows = cmd.ExecuteNonQuery();
+                        conn.Close();
+                        if (rows > 0)
+                        {
+                            return Ok(new { status = true, message = "Record is updated" });
+                        }
+                        else
+                        {
+                            return NotFound(new { status = false, message = "Record is Not updated" });
+                        }
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while updating the record.", error = ex.Message });
+
+
+            }
+
+
+        }
+
+        #endregion
+
 
         #region GetListReasons
 
@@ -163,6 +210,7 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #endregion
+
         [HttpPost("InsertServiceLeads")]
         public IActionResult InsertServiceLeads([FromBody] List<ServiceLeadRequest> serviceLeadsList)
         {
