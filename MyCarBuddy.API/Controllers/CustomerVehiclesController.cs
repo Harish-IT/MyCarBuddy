@@ -219,32 +219,28 @@ namespace MyCarBuddy.API.Controllers
                         {
                             if (reader.Read())
                             {
-                                int success = Convert.ToInt32(reader["Success"]);
+                                int resultCode = Convert.ToInt32(reader["ResultCode"]);
                                 string message = reader["Message"].ToString();
 
-                                if (success == 1)
-                                    return Ok(new { status = true, message });
+                                if (resultCode == 1)
+                                    return Ok(new { message });
+                                else if (resultCode == -1)
+                                    return BadRequest(new { message });
                                 else
-                                    return NotFound(new { status = false, message });
-                            }
-                            else
-                            {
-                                return StatusCode(500, new { status = false, message = "No response from database." });
+                                    return NotFound(new { message });
                             }
                         }
+                        conn.Close();
                     }
                 }
+                return StatusCode(500, new { message = "Unknown error occurred." });
             }
             catch (Exception ex)
             {
-                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
 
-                return StatusCode(500, new
-                {
-                    status = false,
-                    message = "An error occurred while deleting the record.",
-                    error = ex.Message
-                });
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while deleting the record.", error = ex.Message });
+
             }
         }
 
