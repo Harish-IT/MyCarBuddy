@@ -622,6 +622,49 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
+        #region GetTechniciansTodayBookings
+
+
+
+        [HttpGet("GetTechTodayBookings")]
+
+        public IActionResult GetTechniciansTodayBookings([FromQuery] int Id)
+        {
+            try
+            {
+                string jsonResult = null;
+
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                using (SqlCommand cmd = new SqlCommand("sp_GetTechniciansTodayBookings", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@TechID", Id);
+                    conn.Open();
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read() && !reader.IsDBNull(0))
+                        {
+                            jsonResult = reader.GetString(0);
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(jsonResult))
+                    return NotFound(new { message = "No bookings found for this technician" });
+
+                return Content(jsonResult, "application/json");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving bookings.");
+                return StatusCode(500, new { Success = false, Message = "Internal server error." });
+            }
+        }
+
+        #endregion
+
+
 
         #region GetListBookingsById By Id
 
