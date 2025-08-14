@@ -196,6 +196,59 @@ namespace MyCarBuddy.API.Controllers
         #endregion
 
 
+        #region GetTechnicianPayments
+
+        [HttpGet("TodayBookingsCount")]
+
+        public IActionResult GetTechnicianTodayBookingsCount()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_GetTechniciansTodayBookingsCount", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = " Technicians Count not found" });
+                    }
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                        }
+                        Data.Add(dict);
+                    }
+
+                    return Ok(Data);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Technicians Count.", error = ex.Message });
+
+            }
+        }
+
+        #endregion
+
+
 
     }
 }

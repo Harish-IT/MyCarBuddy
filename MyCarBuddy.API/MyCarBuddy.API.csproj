@@ -47,6 +47,7 @@
 		<Folder Include="wwwroot\Documents\" />
 		<Folder Include="wwwroot\Images\Customer\" />
 		<Folder Include="wwwroot\Images\Category\" />
+		<Folder Include="wwwroot\Images\AdminImages\" />
 		<Folder Include="wwwroot\Images\ServiceImages\" />
 		<Folder Include="wwwroot\Images\PlanPrice\" />
 		<Folder Include="wwwroot\Images\PackageImages\" />

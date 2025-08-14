@@ -1,10 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Braintree;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MyCarBuddy.API.Models;
 using MyCarBuddy.API.Services;
+using MyCarBuddy.API.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
@@ -19,11 +27,16 @@ namespace MyCarBuddy.API.Controllers
     {
         private readonly IConfiguration _config;
         private readonly JwtService _jwt;
+        private readonly IWebHostEnvironment _env;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IConfiguration config, JwtService jwt)
+
+
+        public AuthController(IConfiguration config, JwtService jwt, IWebHostEnvironment env)
         {
             _config = config;
             _jwt = jwt;
+            _env = env;
         }
 
         [HttpPost("Technician-login")]
@@ -103,6 +116,113 @@ namespace MyCarBuddy.API.Controllers
                 }
             }
         }
+
+
+        [HttpPut("update-admin")]
+        public async Task<IActionResult> UpdateAdmin([FromForm] AdminUpdate admin)
+        {
+            if (admin.AdminID == null)
+                return BadRequest("AdminID is required.");
+
+            string connectionString = _config.GetConnectionString("DefaultConnection");
+            string? profileImagePath = null;
+
+            if (admin.ProfileImage1 != null && admin.ProfileImage1.Length > 0)
+            {
+                string profileImageFileName = Guid.NewGuid() + Path.GetExtension(admin.ProfileImage1.FileName);
+                var folderPath = Path.Combine(_env.WebRootPath, "Images", "AdminImages");
+                var filePath = Path.Combine(folderPath, profileImageFileName);
+
+                Directory.CreateDirectory(folderPath);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await admin.ProfileImage1.CopyToAsync(stream);
+                }
+
+                profileImagePath = Path.Combine("Images", "AdminImages", profileImageFileName)
+                                   .Replace("\\", "/");
+            }
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                await conn.OpenAsync();
+
+                using (SqlCommand cmd = new SqlCommand("Sp_UpdateAdminUsers", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@AdminID", admin.AdminID ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@FullName",
+                        string.IsNullOrWhiteSpace(admin.FullName) ? DBNull.Value : admin.FullName);
+                    cmd.Parameters.AddWithValue("@PasswordHash",
+                        string.IsNullOrWhiteSpace(admin.PasswordHash) ? DBNull.Value : admin.PasswordHash);
+                    cmd.Parameters.AddWithValue("@ProfileImage",
+                        string.IsNullOrWhiteSpace(profileImagePath) ? DBNull.Value : profileImagePath);
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+
+            return Ok(new { message = "Admin updated successfully" });
+        }
+
+
+
+        #region CategoryById
+
+
+        [HttpGet("adminid")]
+
+        public IActionResult GetCategoryById(int adminid)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("Sp_GetAdminUsersById", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@AdminID", adminid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                    if (dt.Rows.Count == 0)
+                    {
+                        return NotFound(new { message = "Admin  not found" });
+                    }
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                        }
+                        Data.Add(dict);
+                    }
+
+                    return Ok(Data);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLogger.LogToDatabase(ex, HttpContext, _config, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the Admins.", error = ex.Message });
+
+            }
+
+        }
+
+        #endregion
+
+
 
 
 
