@@ -84,14 +84,15 @@ namespace MyCarBuddy.API.Controllers
 
 
                     // GST Calculation (18%) and coupon deduction
-                    decimal gstAmount = Convert.ToDecimal(model.TotalPrice * 0.18m);
-                     priceWithGst = Convert.ToDecimal(model.TotalPrice + gstAmount);
-                    //decimal couponAmount = model.CouponAmount ?? 0;
                     decimal couponAmount = Convert.ToDecimal(model.CouponAmount);
+                    decimal gstAmount = Convert.ToDecimal((model.TotalPrice-model.CouponAmount) * 0.18m);
+                    decimal finalPrice = Convert.ToDecimal(model.TotalPrice-model.CouponAmount + gstAmount);
+                    //decimal couponAmount = model.CouponAmount ?? 0;
+                  
 
-                    decimal finalPrice = priceWithGst - couponAmount;
+                    //decimal  = priceWithGst - couponAmount;
                     if (finalPrice < 0)
-                        finalPrice = 0;
+                       finalPrice = 0;
                    // model.TotalPrice = finalPrice;
                     model.GSTAmount = gstAmount;
 
