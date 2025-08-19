@@ -431,7 +431,7 @@ namespace MyCarBuddy.API.Controllers
         #region GetAllTechnicians
 
         [HttpGet]
-        public IActionResult GetAllTechnicians()
+        public IActionResult GetAllTechnicians([FromQuery] string? role = null, [FromQuery] int? userId = null)
         {
             try
             {
@@ -439,12 +439,29 @@ namespace MyCarBuddy.API.Controllers
                 using(SqlConnection conn=new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     using(SqlCommand cmd=new SqlCommand("sp_ListTechniciansDetails",conn))
-                    {
+                    { // Add parameters conditionally
                         cmd.CommandType = CommandType.StoredProcedure;
+
+                        if (role?.Equals("Dealer", StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            cmd.Parameters.AddWithValue("@DealerID", (object?)userId ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@DistributorID", DBNull.Value);
+                        }
+                        else if (role?.Equals("Distributor", StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            cmd.Parameters.AddWithValue("@DistributorID", (object?)userId ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@DealerID", DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@DealerID", DBNull.Value);
+                            cmd.Parameters.AddWithValue("@DistributorID", DBNull.Value);
+                        }
+
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            dt.Load(reader); // Load data into DataTable
+                            dt.Load(reader);
                         }
                         conn.Close();
                     }

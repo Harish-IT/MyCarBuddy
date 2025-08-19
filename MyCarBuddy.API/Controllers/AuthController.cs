@@ -67,7 +67,7 @@ namespace MyCarBuddy.API.Controllers
                         Token = token,
                         Name = reader["FullName"],
                         Email = reader["Email"]
-                        
+
                     });
                 }
                 else
@@ -140,8 +140,10 @@ namespace MyCarBuddy.API.Controllers
                     await admin.ProfileImage1.CopyToAsync(stream);
                 }
 
-                profileImagePath = Path.Combine("Images", "AdminImages", profileImageFileName)
-                                   .Replace("\\", "/");
+                // profileImagePath = Path.Combine("Images", "AdminImages", profileImageFileName)
+                //  .Replace("\\", "/");
+                profileImagePath = "/" + Path.Combine("Images", "AdminImages", profileImageFileName)
+                      .Replace("\\", "/");
             }
 
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -379,9 +381,9 @@ namespace MyCarBuddy.API.Controllers
                         Token = token,
                         Name = customerName,
                         Email = customerEmail,
-                        CustID=customerId
-                        
-                        
+                        CustID = customerId
+
+
                     });
                 }
                 else
