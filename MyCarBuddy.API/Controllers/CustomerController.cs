@@ -75,6 +75,7 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 string apiKey = "00aaa0bb-62dc-11f0-a562-0200cd936042";
+                
                 string senderId = "GLANSA";
                 string templateName = "MycarbuddySMS";
                 string apiUrl = $"https://2factor.in/API/R1?module=TRANS_SMS" +
