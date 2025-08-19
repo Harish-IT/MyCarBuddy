@@ -429,7 +429,7 @@ namespace MyCarBuddy.API.Controllers
         //}
 
         // ========== 1) INSERT-BOOKING (handles COS or Online) ==========
-
+        decimal finalPrice;
 
         [HttpPost("insert-booking")]
         public async Task<IActionResult> InsertBooking([FromForm] BookingInsertDTO model)
@@ -464,7 +464,7 @@ namespace MyCarBuddy.API.Controllers
 
                     var options = new Dictionary<string, object>
                     {
-                        { "amount", Convert.ToInt64(model.TotalPrice * 100) },
+                        { "amount", Convert.ToInt64(finalPrice * 100) },
                         { "currency", "INR" },
                         { "receipt", bookingId.ToString() },
                         { "payment_capture", 1 }
@@ -502,8 +502,9 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-        // ========== 2) CONFIRM-PAYMENT ==========
-        [HttpPost("confirm-payment")]
+       
+       // ========== 2) CONFIRM-PAYMENT ==========
+       [HttpPost("confirm-payment")]
         public IActionResult ConfirmPayment([FromBody] PaymentConfirmRequest req)
         {
             try
@@ -629,14 +630,14 @@ namespace MyCarBuddy.API.Controllers
 
             // GST Calculation (18%) and coupon deduction
             decimal couponAmount = Convert.ToDecimal(model.CouponAmount);
-            decimal gstAmount = Convert.ToDecimal((model.TotalPrice - model.CouponAmount) * 0.18m);
-            decimal finalPrice = Convert.ToDecimal(model.TotalPrice - model.CouponAmount + gstAmount);
+          
+            finalPrice = Convert.ToDecimal(model.TotalPrice - model.CouponAmount + model.GSTAmount);
             //decimal couponAmount = model.CouponAmount ?? 0;
             //decimal  = priceWithGst - couponAmount;
             if (finalPrice < 0)
                 finalPrice = 0;
             // model.TotalPrice = finalPrice;
-            model.GSTAmount = gstAmount;
+            
 
 
             using var cmd = new SqlCommand("sp_InsertBookings", conn) { CommandType = CommandType.StoredProcedure };
