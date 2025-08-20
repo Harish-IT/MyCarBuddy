@@ -46,7 +46,6 @@ namespace MyCarBuddy.API.Controllers
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-
         [HttpPost("send-otp")]
         public async Task<IActionResult> SendOtp([FromForm] string phoneNumber)
         {
@@ -60,19 +59,18 @@ namespace MyCarBuddy.API.Controllers
                     phoneNumber = "91" + phoneNumber;
                 else if (!phoneNumber.StartsWith("91") || phoneNumber.Length != 12)
                     return BadRequest(new { Success = false, Message = "Invalid phone number" });
-                if(phoneNumber=="9999999999")
-                {
-                     otp = "123456";
 
+                bool sendOtpToUser = true;
+
+                if (phoneNumber == "919999999999")
+                {
+                    otp = "123456";
+                    sendOtpToUser = false; // Do not send OTP for this test number
                 }
                 else
                 {
-                     otp = new Random().Next(100000, 999999).ToString();
-
+                    otp = new Random().Next(100000, 999999).ToString();
                 }
-
-
-                   
 
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
@@ -86,27 +84,29 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                string apiKey = "00aaa0bb-62dc-11f0-a562-0200cd936042";
-                
-                string senderId = "GLANSA";
-                string templateName = "MycarbuddySMS";
-                string apiUrl = $"https://2factor.in/API/R1?module=TRANS_SMS" +
-                                $"&apikey={apiKey}" +
-                                $"&to={phoneNumber}" +
-                                $"&from={senderId}" +
-                                $"&templatename={templateName}" +
-                                $"&var1={phoneNumber}" +
-                                $"&var2={otp}";
+                if (sendOtpToUser)
+                {
+                    string apiKey = "00aaa0bb-62dc-11f0-a562-0200cd936042";
+                    string senderId = "GLANSA";
+                    string templateName = "MycarbuddySMS";
+                    string apiUrl = $"https://2factor.in/API/R1?module=TRANS_SMS" +
+                                    $"&apikey={apiKey}" +
+                                    $"&to={phoneNumber}" +
+                                    $"&from={senderId}" +
+                                    $"&templatename={templateName}" +
+                                    $"&var1={phoneNumber}" +
+                                    $"&var2={otp}";
 
-                using HttpClient client = new HttpClient();
-                var response = await client.GetAsync(apiUrl);
-                var result = await response.Content.ReadAsStringAsync();
+                    using HttpClient client = new HttpClient();
+                    var response = await client.GetAsync(apiUrl);
+                    var result = await response.Content.ReadAsStringAsync();
 
-                using var json = JsonDocument.Parse(result);
-                var status = json.RootElement.GetProperty("Status").GetString();
+                    using var json = JsonDocument.Parse(result);
+                    var status = json.RootElement.GetProperty("Status").GetString();
 
-                if (status != "Success")
-                    return StatusCode(500, new { Success = false, Message = "OTP send failed", APIResponse = result });
+                    if (status != "Success")
+                        return StatusCode(500, new { Success = false, Message = "OTP send failed", APIResponse = result });
+                }
 
                 return Ok(new { Success = true, Message = "OTP sent successfully" });
             }
@@ -116,7 +116,6 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { Success = false, Message = ex.Message });
             }
         }
-
 
 
         [HttpPost("verify-otp")]
