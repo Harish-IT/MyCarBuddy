@@ -141,5 +141,11 @@ namespace MyCarBuddy.API.Models
         public string? TransactionId { get; set; }         // your internal receipt no.
     }
 
+    public class CashPaymentFinalizeRequest
+    {
+        public int BookingID { get; set; }
+        public decimal AmountPaid { get; set; }
+        public string TransactionId { get; set; }
+    }
 
 }

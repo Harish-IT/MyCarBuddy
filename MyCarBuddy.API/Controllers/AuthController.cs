@@ -266,7 +266,34 @@ namespace MyCarBuddy.API.Controllers
             if (string.IsNullOrEmpty(loginId) || loginId.ToLower() == "string")
                 return BadRequest(new { Success = false, Message = "Please provide a valid Email or Phone Number." });
 
-            string otp = new Random().Next(100000, 999999).ToString();
+            string phoneNumber = loginId;
+            string otp;
+            bool sendOtpToUser = true;
+
+            // Check if it's a phone number
+            if (!loginId.Contains("@"))
+            {
+                if (phoneNumber.Length == 10)
+                    phoneNumber = "91" + phoneNumber;
+                else if (!phoneNumber.StartsWith("91") || phoneNumber.Length != 12)
+                    return BadRequest(new { Success = false, Message = "Invalid phone number" });
+
+                // Default OTP for test number
+                if (phoneNumber == "919999999999")
+                {
+                    otp = "123456";
+                    sendOtpToUser = false; // Skip SMS sending
+                }
+                else
+                {
+                    otp = new Random().Next(100000, 999999).ToString();
+                }
+            }
+            else
+            {
+                // Email login -> always generate random OTP
+                otp = new Random().Next(100000, 999999).ToString();
+            }
 
             // Save OTP in DB
             using (SqlConnection conn = new SqlConnection(_config.GetConnectionString("DefaultConnection")))
@@ -279,7 +306,7 @@ namespace MyCarBuddy.API.Controllers
                 cmd.ExecuteNonQuery();
             }
 
-            // Email or SMS based on format
+            // Email flow
             if (loginId.Contains("@"))
             {
                 var smtpClient = new SmtpClient("smtp.gmail.com")
@@ -290,23 +317,18 @@ namespace MyCarBuddy.API.Controllers
                 };
                 smtpClient.Send("harish@glansa.com", loginId, "Your OTP Code", $"Your OTP is: {otp}");
             }
-            else
+            else if (sendOtpToUser) // SMS flow only if not test number
             {
                 string apiKey = "00aaa0bb-62dc-11f0-a562-0200cd936042";
                 string templateName = "MycarbuddySMS";
                 string senderId = "GLANSA";
 
-                if (loginId.Length == 10)
-                    loginId = "91" + loginId;
-                else if (loginId.Length != 12 || !loginId.StartsWith("91"))
-                    return BadRequest("Invalid phone number");
-
                 string apiUrl = $"https://2factor.in/API/R1?module=TRANS_SMS" +
                                 $"&apikey={Uri.EscapeDataString(apiKey)}" +
-                                $"&to={Uri.EscapeDataString(loginId)}" +
+                                $"&to={Uri.EscapeDataString(phoneNumber)}" +
                                 $"&from={Uri.EscapeDataString(senderId)}" +
                                 $"&templatename={Uri.EscapeDataString(templateName)}" +
-                                $"&var1={Uri.EscapeDataString(loginId)}" +
+                                $"&var1={Uri.EscapeDataString(phoneNumber)}" +
                                 $"&var2={Uri.EscapeDataString(otp)}";
 
                 using (HttpClient client = new HttpClient())
@@ -320,8 +342,9 @@ namespace MyCarBuddy.API.Controllers
                 }
             }
 
-            return Ok(new { Success = true, Message = "OTP sent successfully." });
+            return Ok(new { Success = true, Message = "OTP sent successfully.", OTP = otp });
         }
+
 
 
 

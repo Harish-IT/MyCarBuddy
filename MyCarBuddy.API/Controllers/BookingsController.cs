@@ -1,6 +1,8 @@
 ﻿using Braintree;
 using GSF;
 using GSF.ErrorManagement;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.CompilerServices;
 using MyCarBuddy.API.Models;
 using MyCarBuddy.API.Utilities;
+using Newtonsoft.Json;
 using Razorpay.Api;
 using System;
 using System.Collections.Generic;
@@ -18,13 +21,13 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing.Printing;
 using System.IO;
-using System.Linq;
-using System.Reflection.Metadata;
-using System.Threading.Tasks;
-
-using iTextSharp.text;
-using iTextSharp.text.pdf;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata;
+using System.Text;
+using System.Threading.Tasks;
 
 
 namespace MyCarBuddy.API.Controllers
@@ -719,6 +722,88 @@ namespace MyCarBuddy.API.Controllers
             doc.Add(new Paragraph($"Payment Date: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"));
             doc.Close();
         }
+
+
+
+        [HttpPost("finalize-cash-payment")]
+        public IActionResult FinalizeCashPayment([FromBody] CashPaymentFinalizeRequest req)
+        {
+            try
+            {
+                string invoiceNumber;
+                string fileUrl;
+
+                string invoicesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Invoices");
+                if (!Directory.Exists(invoicesFolder))
+                    Directory.CreateDirectory(invoicesFolder);
+
+                string tempUrl = $"{Request.Scheme}://{Request.Host}/Invoices/TEMP.pdf";
+
+                using var conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+                conn.Open();
+                using var cmd = new SqlCommand("SP_FinalizeCODPayment", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.AddWithValue("@BookingID", req.BookingID);
+                cmd.Parameters.AddWithValue("@AmountPaid", req.AmountPaid);
+                cmd.Parameters.AddWithValue("@TransactionID", string.IsNullOrWhiteSpace(req.TransactionId)
+                    ? $"COS-{req.BookingID}-{DateTime.UtcNow:yyyyMMddHHmmss}"
+                    : req.TransactionId);
+                cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
+                cmd.Parameters.AddWithValue("@FolderPath", tempUrl);
+
+                var outInv = new SqlParameter("@InvoiceNumber", SqlDbType.NVarChar, 50)
+                { Direction = ParameterDirection.Output };
+                cmd.Parameters.Add(outInv);
+
+                cmd.ExecuteNonQuery();
+                invoiceNumber = outInv.Value?.ToString() ?? throw new Exception("Invoice number not returned.");
+
+                SetPaymentStatus(req.BookingID, "Success");
+
+                // Generate invoice PDF
+                GenerateInvoicePDF(invoiceNumber, new PaymentConfirmRequest
+                {
+                    BookingID = req.BookingID,
+                    AmountPaid = req.AmountPaid,
+                    PaymentMode = "COS",
+                    TransactionId = req.TransactionId
+                });
+
+                // Update folder path with final invoice
+                fileUrl = $"{Request.Scheme}://{Request.Host}/Invoices/{invoiceNumber}.pdf";
+                using (var conn2 = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    conn2.Open();
+                    using var cmd2 = new SqlCommand("SP_UpdatePaymentFolderPath", conn2)
+                    { CommandType = CommandType.StoredProcedure };
+                    cmd2.Parameters.AddWithValue("@InvoiceNumber", invoiceNumber);
+                    cmd2.Parameters.AddWithValue("@FolderPath", fileUrl);
+                    cmd2.ExecuteNonQuery();
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Cash payment finalized and invoice generated",
+                    data = new
+                    {
+                        bookingId = req.BookingID,
+                        amountPaid = req.AmountPaid,
+                        paymentMode = "COS",
+                        invoiceNumber,
+                        invoiceUrl = fileUrl
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                try { if (req?.BookingID > 0) SetPaymentStatus(req.BookingID, "Failed"); } catch { }
+                return StatusCode(500, new { success = false, message = "Server error", error = ex.Message });
+            }
+        }
+
 
         private Task SendBookingConfirmationSMS(int custId, int bookingId) => Task.CompletedTask;
         private Task SendBookingConfirmationEmail(int custId, int bookingId) => Task.CompletedTask;

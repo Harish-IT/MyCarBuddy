@@ -75,7 +75,7 @@ namespace MyCarBuddy.API.Controllers
                 using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
                 {
                     await conn.OpenAsync();
-                    using (SqlCommand cmd = new SqlCommand("SP_SaveCustomerOTPTemp", conn))
+                    using (SqlCommand cmd = new SqlCommand("SP_SaveCustomerOTP", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@LoginId", phoneNumber);
@@ -132,7 +132,7 @@ namespace MyCarBuddy.API.Controllers
             else if (!phoneNumber.StartsWith("91") || phoneNumber.Length != 12)
                 return BadRequest(new { Success = false, Message = "Invalid phone number" });
 
-            using SqlCommand cmd = new SqlCommand("SP_VerifyCustomerOTPTemp", conn);
+            using SqlCommand cmd = new SqlCommand("SP_VerifyCustomerOTP", conn);
             cmd.CommandType = CommandType.StoredProcedure;
             cmd.Parameters.AddWithValue("@LoginId", phoneNumber);
             cmd.Parameters.AddWithValue("@OTP", otp);
@@ -143,7 +143,7 @@ namespace MyCarBuddy.API.Controllers
 
             reader.Close();
 
-            using SqlCommand markCmd = new SqlCommand("SP_MarkCustomerOTPUsedTemp", conn);
+            using SqlCommand markCmd = new SqlCommand("SP_MarkCustomerOTPUsed", conn);
             markCmd.CommandType = CommandType.StoredProcedure;
             markCmd.Parameters.AddWithValue("@LoginId", phoneNumber);
             markCmd.Parameters.AddWithValue("@OTP", otp);
