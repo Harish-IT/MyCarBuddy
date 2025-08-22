@@ -44,6 +44,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@StateID", city.StateID);
                         cmd.Parameters.AddWithValue("@CityName", city.CityName);
                         cmd.Parameters.AddWithValue("@IsActive", city.IsActive);
+                        cmd.Parameters.AddWithValue("@Pincode", city.Pincode);
                         conn.Open();
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -97,6 +98,8 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@StateID", city.StateID);
                         cmd.Parameters.AddWithValue("@CityName", city.CityName);
                         cmd.Parameters.AddWithValue("@IsActive", city.IsActive);
+                        cmd.Parameters.AddWithValue("@Pincode", city.Pincode);
+
                         conn.Open();
                         int rows = cmd.ExecuteNonQuery();
                         conn.Close();
@@ -238,7 +241,7 @@ namespace MyCarBuddy.API.Controllers
                 }
                 if (dt.Rows.Count == 0)
                 {
-                    return NotFound(new { message = "Plan Packages not found" });
+                    return NotFound(new { message = "Cities not found" });
                 }
                 var Data = new List<Dictionary<string, object>>();
                 foreach (DataRow row in dt.Rows)

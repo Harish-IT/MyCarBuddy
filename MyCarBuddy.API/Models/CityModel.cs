@@ -8,6 +8,7 @@
         public int StateID {  get; set; }
         public string CityName { get; set; }
         public bool IsActive { get; set; }
+        public string Pincode {  get; set; }
 
 
     }
@@ -20,6 +21,7 @@
         public int StateID { get; set; }
         public string CityName { get; set; }
         public bool IsActive { get; set; }
+        public string Pincode { get; set; }
 
     }
 }
