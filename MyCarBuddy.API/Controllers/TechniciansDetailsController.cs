@@ -133,7 +133,15 @@ namespace MyCarBuddy.API.Controllers
                     cmd.Parameters.AddWithValue("@IsActive", technicians.IsActive);
                     cmd.Parameters.AddWithValue("@DistributorID", technicians.DistributorID);
                     //cmd.Parameters.AddWithValue("@SkillID", technicians.SkillID);
-                    cmd.Parameters.AddWithValue("@SkillID", string.Join(",", technicians.SkillIDs));
+
+                    // Handle SkillIDs (if empty, send DBNull)
+                    var skills = (technicians.SkillIDs != null && technicians.SkillIDs.Count > 0)
+                        ? string.Join(",", technicians.SkillIDs)
+                        : (object)DBNull.Value;
+                    cmd.Parameters.AddWithValue("@SkillID", skills);
+
+
+                    // cmd.Parameters.AddWithValue("@SkillID", string.Join(",", technicians.SkillIDs));
 
 
                     var result = await cmd.ExecuteScalarAsync();
