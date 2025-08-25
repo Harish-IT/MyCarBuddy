@@ -167,7 +167,7 @@ namespace MyCarBuddy.API.Controllers
 
                     if (dt.Rows.Count == 0)
                     {
-                        return NotFound(new { message = " Technician Payments not found" });
+                        return Ok(new { message = " Technician Payments not found" });
                     }
                     var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
@@ -220,7 +220,7 @@ namespace MyCarBuddy.API.Controllers
 
                     if (dt.Rows.Count == 0)
                     {
-                        return NotFound(new { message = " Technicians Count not found" });
+                        return Ok (new { message = " Technicians Count not found" });
                     }
                     var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
@@ -247,6 +247,55 @@ namespace MyCarBuddy.API.Controllers
         }
 
         #endregion
+
+
+
+        #region GetServiceRating
+
+        [HttpGet("ServiceCompleted")]
+        public IActionResult ServiceCompleted(int techid)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("GetCompletedBookingCountByTech", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechID", techid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                        }
+                        Data.Add(dict);
+                    }
+                    return Ok(Data);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the service Count.", error = ex.Message });
+
+            }
+        }
+
+        #endregion
+
 
 
 

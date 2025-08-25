@@ -47,6 +47,8 @@ namespace MyCarBuddy.API.Controllers
 
                         cmd.Parameters.AddWithValue("@Reason", leads.Reason);
                         cmd.Parameters.AddWithValue("@IsActive", leads.IsActive);
+                        cmd.Parameters.AddWithValue("@ReasonType", leads.ReasonType);
+
                         conn.Open();
                         cmd.ExecuteNonQuery();
                     }
@@ -76,6 +78,8 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@ID", Leads.ID);
                         cmd.Parameters.AddWithValue("@Reason", Leads.Reason);
                         cmd.Parameters.AddWithValue("@IsActive", Leads.IsActive);
+                        cmd.Parameters.AddWithValue("@ReasonType", Leads.ReasonType);
+
                         conn.Open();
                         int rows = cmd.ExecuteNonQuery();
                         conn.Close();

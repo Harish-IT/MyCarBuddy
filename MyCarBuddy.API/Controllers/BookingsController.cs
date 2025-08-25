@@ -51,6 +51,8 @@ namespace MyCarBuddy.API.Controllers
             _env = env;
         }
         // ========== 1) INSERT-BOOKING (handles COS or Online) ==========
+
+
         decimal finalPrice;
 
         [HttpPost("insert-booking")]
@@ -72,7 +74,7 @@ namespace MyCarBuddy.API.Controllers
                         CommandType = CommandType.StoredProcedure
                     };
                     cmd.Parameters.AddWithValue("@BookingID", bookingId);
-                    cmd.Parameters.AddWithValue("@ExpectedAmount", model.TotalPrice);
+                    cmd.Parameters.AddWithValue("@ExpectedAmount", finalPrice);
                     await cmd.ExecuteNonQueryAsync();
 
                     await SetPaymentStatusAsync(bookingId, "Pending");
@@ -125,11 +127,13 @@ namespace MyCarBuddy.API.Controllers
             }
         }
 
-       
+      
        // ========== 2) CONFIRM-PAYMENT ==========
        [HttpPost("confirm-payment")]
         public IActionResult ConfirmPayment([FromBody] PaymentConfirmRequest req)
         {
+           
+
             try
             {
                 string invoiceNumber;
@@ -156,7 +160,7 @@ namespace MyCarBuddy.API.Controllers
                         CommandType = CommandType.StoredProcedure
                     };
                     cmd.Parameters.AddWithValue("@BookingID", req.BookingID);
-                    cmd.Parameters.AddWithValue("@AmountPaid", req.AmountPaid);
+                    cmd.Parameters.AddWithValue("@AmountPaid", finalPrice);
                     cmd.Parameters.AddWithValue("@PaymentMode", "Razorpay");
                     cmd.Parameters.AddWithValue("@TransactionID", req.RazorpayPaymentId);
                     cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
@@ -174,6 +178,9 @@ namespace MyCarBuddy.API.Controllers
                 }
                 else if (req.PaymentMode?.Equals("COS", StringComparison.OrdinalIgnoreCase) == true)
                 {
+
+                     
+
                     using var conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
                     conn.Open();
                     using var cmd = new SqlCommand("SP_FinalizeCODPayment", conn)
@@ -181,7 +188,7 @@ namespace MyCarBuddy.API.Controllers
                         CommandType = CommandType.StoredProcedure
                     };
                     cmd.Parameters.AddWithValue("@BookingID", req.BookingID);
-                    cmd.Parameters.AddWithValue("@AmountPaid", req.AmountPaid);
+                    cmd.Parameters.AddWithValue("@AmountPaid", finalPrice);
                     cmd.Parameters.AddWithValue("@TransactionID", string.IsNullOrWhiteSpace(req.TransactionId) ? $"COS-{req.BookingID}-{DateTime.UtcNow:yyyyMMddHHmmss}" : req.TransactionId);
                     cmd.Parameters.AddWithValue("@PaymentDate", DateTime.Now);
                     cmd.Parameters.AddWithValue("@FolderPath", tempUrl);
@@ -251,6 +258,12 @@ namespace MyCarBuddy.API.Controllers
             string trackId = $"{prefix}{Guid.NewGuid().ToString("N").Substring(0, 3).ToUpper()}";
             model.BookingTrackID = trackId;
 
+            //Generate OTP
+
+            Random random=new Random();
+            int otp = random.Next(100000, 999999);
+            model.BookingOTP = otp;
+
             // GST Calculation (18%) and coupon deduction
             decimal couponAmount = Convert.ToDecimal(model.CouponAmount);
           
@@ -294,6 +307,8 @@ namespace MyCarBuddy.API.Controllers
             cmd.Parameters.AddWithValue("@OthersPhoneNumber", model.OthersPhoneNumber ?? "");
             cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
             cmd.Parameters.AddWithValue("@VechicleID", model.VechicleID);
+            cmd.Parameters.AddWithValue("@BookingOTP", model.BookingOTP);
+
 
             var outId = new SqlParameter("@BookingID", SqlDbType.Int) { Direction = ParameterDirection.Output };
             cmd.Parameters.Add(outId);
@@ -366,7 +381,7 @@ namespace MyCarBuddy.API.Controllers
                     CommandType = CommandType.StoredProcedure
                 };
                 cmd.Parameters.AddWithValue("@BookingID", req.BookingID);
-                cmd.Parameters.AddWithValue("@AmountPaid", req.AmountPaid);
+                cmd.Parameters.AddWithValue("@AmountPaid", finalPrice);
                 cmd.Parameters.AddWithValue("@TransactionID", string.IsNullOrWhiteSpace(req.TransactionId)
                     ? $"COS-{req.BookingID}-{DateTime.UtcNow:yyyyMMddHHmmss}"
                     : req.TransactionId);
@@ -572,7 +587,7 @@ namespace MyCarBuddy.API.Controllers
                     }
                 }
 
-                return Ok(new { Success = true, Message = "Technician assigned successfully." });
+                return Ok (new { Success = true, Message = "Technician assigned successfully." });
             }
             catch (SqlException sqlEx)
             {
@@ -610,7 +625,7 @@ namespace MyCarBuddy.API.Controllers
 
                     if (dt.Rows.Count == 0)
                     {
-                        return NotFound(new { message = "Bookings not found" });
+                        return Ok (new { message = "Bookings not found" });
                     }
                     var Data = new List<Dictionary<string, object>>();
                     foreach (DataRow row in dt.Rows)
@@ -682,7 +697,7 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonResult) || jsonResult == "[]")
-                    return NotFound(new { message = "No bookings found for this Id" });
+                    return Ok (new { message = "No bookings found for this Id" });
 
                 return Content(jsonResult, "application/json");
             }
@@ -724,7 +739,7 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonResult))
-                    return NotFound(new { message = "No bookings found for this technician" });
+                    return Ok (new { message = "No bookings found for this technician" });
 
                 return Content(jsonResult, "application/json");
             }
@@ -764,7 +779,7 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonResult))
-                    return NotFound(new { message = "No bookings found for this technician" });
+                    return Ok (new { message = "No bookings found for this technician" });
 
                 return Content(jsonResult, "application/json");
             }
@@ -806,7 +821,7 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonResult))
-                    return NotFound(new { message = "No bookings found for this Id" });
+                    return Ok (new { message = "No bookings found for this Id" });
 
                 return Content(jsonResult, "application/json");
             }

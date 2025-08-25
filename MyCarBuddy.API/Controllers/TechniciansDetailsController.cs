@@ -319,7 +319,16 @@ namespace MyCarBuddy.API.Controllers
                         cmd.Parameters.AddWithValue("@Status", technicians.Status);
                         cmd.Parameters.AddWithValue("@DistributorID", technicians.DistributorID);
                         // cmd.Parameters.AddWithValue("@SkillID", technicians.SkillIDs);
-                        cmd.Parameters.AddWithValue("@SkillID", string.Join(",", technicians.SkillIDs));
+                        // cmd.Parameters.AddWithValue("@SkillID", string.Join(",", technicians.SkillIDs));
+
+
+
+                        // Handle SkillIDs (if empty, send DBNull)
+                        var skills = (technicians.SkillIDs != null && technicians.SkillIDs.Count > 0)
+                            ? string.Join(",", technicians.SkillIDs)
+                            : (object)DBNull.Value;
+                        cmd.Parameters.AddWithValue("@SkillID", skills);
+
 
                         // Document fields as NULL
                         cmd.Parameters.AddWithValue("@DocID", DBNull.Value);

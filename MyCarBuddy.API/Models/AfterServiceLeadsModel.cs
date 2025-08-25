@@ -7,6 +7,7 @@ namespace MyCarBuddy.API.Models
         public int? ID { get;set; }
         public string Reason { get; set; } = string.Empty;
         public bool IsActive {  get; set; }
+        public string ReasonType { get; set; }=string.Empty;
 
     }
 

@@ -57,7 +57,7 @@ namespace MyCarBuddy.API.Controllers
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@BookingID", request.BookingID);
                         cmd.Parameters.AddWithValue("@ActionType", request.ActionType);
-
+                        cmd.Parameters.AddWithValue("@BookingOTP", (object?)request.BookingOTP ?? DBNull.Value);
                         conn.Open();
                         cmd.ExecuteNonQuery();
                     }

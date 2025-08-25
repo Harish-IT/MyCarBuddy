@@ -65,9 +65,11 @@ namespace MyCarBuddy.API.Controllers
 
 
                     var originalIconFileName = Path.GetFileNameWithoutExtension(category.IconImage1.FileName);
+                    var originalFileNameWithoutSpaces = originalIconFileName.Replace(" ", "");
+
                     var iconFileExt = Path.GetExtension(category.IconImage1.FileName);
                     var randomString = GetRandomAlphanumericString(8); // 8-character alphanumeric
-                    var iconFileName = $"{originalIconFileName}_{randomString}{iconFileExt}";
+                    var iconFileName = $"{originalFileNameWithoutSpaces}_{randomString}{iconFileExt}";
                     var iconFullPath = Path.Combine(iconFolderPath, iconFileName);
 
 
@@ -100,9 +102,11 @@ namespace MyCarBuddy.API.Controllers
 
 
                     var originalThumbFileName = Path.GetFileNameWithoutExtension(category.ThumbnailImage1.FileName);
+                    var originalFileNameWithoutSpaces = originalThumbFileName.Replace(" ", "");
+
                     var thumbFileExt = Path.GetExtension(category.ThumbnailImage1.FileName);
                     var randomString = GetRandomAlphanumericString(8); // 8-character alphanumeric
-                    var thumbFileName = $"{originalThumbFileName}_{randomString}{thumbFileExt}";
+                    var thumbFileName = $"{originalFileNameWithoutSpaces}_{randomString}{thumbFileExt}";
                     var thumbFullPath = Path.Combine(thumbFolderPath, thumbFileName);
 
                     int counter = 1;
@@ -200,9 +204,11 @@ namespace MyCarBuddy.API.Controllers
                         Directory.CreateDirectory(iconFolderPath);
 
                     var originalFileName = Path.GetFileNameWithoutExtension(category.IconImage1.FileName);
+                    var originalFileNameWithoutSpaces = originalFileName.Replace(" ", "");
+
                     var fileExt = Path.GetExtension(category.IconImage1.FileName);
                     var randomString = GetRandomAlphanumericString(8);
-                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    string uniqueFileName = $"{originalFileNameWithoutSpaces}_{randomString}{fileExt}";
                     var iconFullPath = Path.Combine(iconFolderPath, uniqueFileName);
 
                     // Optional: Extra collision check (very rare with random string)
@@ -230,9 +236,11 @@ namespace MyCarBuddy.API.Controllers
                         Directory.CreateDirectory(thumbFolderPath);
 
                     var originalFileName = Path.GetFileNameWithoutExtension(category.ThumbnailImage1.FileName);
+                    var originalFileNameWithoutSpaces = originalFileName.Replace(" ", "");
+
                     var fileExt = Path.GetExtension(category.ThumbnailImage1.FileName);
                     var randomString = GetRandomAlphanumericString(8);
-                    string uniqueFileName = $"{originalFileName}_{randomString}{fileExt}";
+                    string uniqueFileName = $"{originalFileNameWithoutSpaces}_{randomString}{fileExt}";
                     var thumbFullPath = Path.Combine(thumbFolderPath, uniqueFileName);
 
                     // Optional: Extra collision check (very rare with random string)

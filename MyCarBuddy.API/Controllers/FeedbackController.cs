@@ -112,7 +112,7 @@ namespace MyCarBuddy.API.Controllers
             {
 
                 ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
-                return StatusCode(500, new { message = "An error occurred while retrieving the times slot.", error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred while retrieving the feedback.", error = ex.Message });
 
             }
         }
@@ -194,8 +194,56 @@ namespace MyCarBuddy.API.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving the feedback.", error = ex.Message });
             }
         }
-       
+
         #endregion
+
+
+        #region GetServiceRating
+
+        [HttpGet("Review")]
+        public IActionResult GetServiceRating(int techid)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("GetServiceRatingByTech", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TechID", techid);
+                        conn.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            dt.Load(reader);
+                        }
+                        conn.Close();
+                    }
+                    var Data = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in dt.Columns)
+                        {
+                            var value = row[col];
+                            dict[col.ColumnName] = value == DBNull.Value ? null : value;
+                        }
+                        Data.Add(dict);
+                    }
+                    return Ok(Data);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                ErrorLogger.LogToDatabase(ex, HttpContext, _configuration, _logger);
+                return StatusCode(500, new { message = "An error occurred while retrieving the service rating.", error = ex.Message });
+
+            }
+        }
+
+        #endregion
+
 
     }
 }

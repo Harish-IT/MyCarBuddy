@@ -123,6 +123,8 @@ namespace MyCarBuddy.API.Models
         public string? OthersPhoneNumber { get; set; }
         public int CreatedBy { get; set; }
         public int VechicleID { get; set; }
+
+        public int? BookingOTP { get; set; }
         // public List<IFormFile> Images { get; set; } // if you use images
     }
 

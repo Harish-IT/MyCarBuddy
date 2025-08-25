@@ -4,6 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Data;
+using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -56,6 +59,24 @@ public class RefundController : ControllerBase
                 // Deserialize response into dynamic object
                 var refundResponse = JsonConvert.DeserializeObject<dynamic>(responseData);
 
+                using (var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new SqlCommand("sp_InsertRefund", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("@BookingID", request.BookingID);
+                        command.Parameters.AddWithValue("@Amount", ((decimal)refundResponse.amount) / 100);
+                        command.Parameters.AddWithValue("@RefundMethod", "Razorpay"); // you can set dynamic if needed
+                        command.Parameters.AddWithValue("@TransactionRef",request.PaymentId);
+                        command.Parameters.AddWithValue("@Status", (string)refundResponse.status);
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+
+
                 // Return clean custom response
                 return Ok(new
                 {
@@ -84,6 +105,7 @@ public class RefundController : ControllerBase
 
 public class RefundRequest
 {
+    public int BookingID {  get; set; }
     public string PaymentId { get; set; }
     public int Amount { get; set; } // in INR (not paise)
 }
