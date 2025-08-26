@@ -516,7 +516,7 @@ namespace MyCarBuddy.API.Controllers
                     {
                         email = reader["CustEmail"]?.ToString();
                         custName = reader["CustFullName"]?.ToString();
-                        invoicePath = reader["InvoicePath"]?.ToString(); // assuming you save it
+                        invoicePath = reader["InvoicePath"]?.ToString(); // assuming you save invoice
                     }
                 }
 
@@ -524,27 +524,34 @@ namespace MyCarBuddy.API.Controllers
 
                 string subject = "Booking Confirmation - MyCarBuddy";
                 string body = $@"
-            <h2>Hi {custName ?? "Customer"},</h2>
-            <p>Your booking <b>#{bookingId}</b> has been successfully confirmed.</p>
-            <p>Thank you for choosing <b>MyCarBuddy</b> 🚗✨</p>
-            <p>Please find your invoice attached.</p>
-            <br/>
-            <p>Regards,<br/>Team MyCarBuddy</p>
+        <h2>Dear {custName ?? "Customer"},</h2>
+        <p>Your booking <b>#{bookingId}</b> has been successfully confirmed.</p>
+        <p>Thank you for choosing <b>MyCarBuddy</b> 🚗✨</p>
+        <p>Please find your invoice attached.</p>
+        <br/>
+        <p>Regards,<br/>Team MyCarBuddy</p>
         ";
 
-                using var smtp = new SmtpClient(_configuration["Email:SmtpHost"], int.Parse(_configuration["Email:SmtpPort"]))
+                // ✅ Load Gmail SMTP details from config
+                string smtpHost = _configuration["Email:SmtpHost"];
+                int smtpPort = int.Parse(_configuration["Email:SmtpPort"]);
+                string smtpUser = _configuration["Email:Username"];
+                string smtpPass = _configuration["Email:Password"];
+                string fromEmail = _configuration["Email:From"];
+
+                using var smtp = new SmtpClient(smtpHost, smtpPort)
                 {
-                    Credentials = new NetworkCredential(
-                        _configuration["Email:prudhviraj.glansa@gmail.com"],
-                        _configuration["Email:ujiajcwsczeghshr"]
-                    ),
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
                     EnableSsl = true
                 };
 
-                var mail = new MailMessage(_configuration["Email:From"], email, subject, body)
+                var mail = new MailMessage(fromEmail, email, subject, body)
                 {
                     IsBodyHtml = true
                 };
+
+                // ✅ Add CC
+                mail.CC.Add("haris@glansa.com");
 
                 // attach invoice if available
                 if (!string.IsNullOrEmpty(invoicePath) && System.IO.File.Exists(invoicePath))
@@ -553,12 +560,15 @@ namespace MyCarBuddy.API.Controllers
                 }
 
                 await smtp.SendMailAsync(mail);
+                _logger.LogInformation($"Booking confirmation email sent to {email} (CC: haris@glansa.com) for booking {bookingId}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to send Email for booking {bookingId}");
+                _logger.LogError(ex, $"❌ Failed to send Email for booking {bookingId}");
             }
         }
+
+
 
 
 
