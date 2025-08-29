@@ -150,4 +150,10 @@ namespace MyCarBuddy.API.Models
         public string TransactionId { get; set; }
     }
 
+    public class BookingStatusUpdate
+    {
+        public int BookingID { get; set; }
+        public string BookingStatus {  get; set; }
+    }
+
 }

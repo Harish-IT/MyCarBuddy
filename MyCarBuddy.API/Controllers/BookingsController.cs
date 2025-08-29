@@ -21,7 +21,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Drawing.Printing;
 using System.IO;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -964,12 +963,44 @@ namespace MyCarBuddy.API.Controllers
         }
 
 
-      
-
-
-
-
-
         #endregion
+
+        [HttpPut("booking-status")]
+        public IActionResult UpdateBookingStatus(BookingStatusUpdate status)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_configuration.GetConnectionString("DefaultConnection")))
+                {
+                    using (SqlCommand cmd = new SqlCommand("Sp_BookingStatusFailed", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@BookingId", status.BookingID);
+                        cmd.Parameters.AddWithValue("@BookingStatus", status.BookingStatus);
+                       
+
+                        conn.Open();
+                        int rows = cmd.ExecuteNonQuery();
+                        conn.Close();
+                        if (rows > 0)
+                        {
+                            return Ok(new { message = "status  is updated" });
+                        }
+                        else
+                        {
+                            return NotFound(new { message = "status is Not updated" });
+                        }
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while update the status.", error = ex.Message });
+
+            }
+
+        }
     }
 }
